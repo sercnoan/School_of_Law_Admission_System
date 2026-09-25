@@ -1,25 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import PortalLayout from '@/layouts/portal-layout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
-import {
-    LayoutDashboard,
-    FileText,
-    UserCheck,
-    CalendarCheck,
-    ClipboardCheck,
-    CalendarDays,
-    LogOut,
-    Menu,
-    X,
-    ArrowLeft,
-    User,
-    GraduationCap,
-    ClipboardList,
-    CheckCircle,
-    XCircle,
-    Clock,
-    ExternalLink,
-    Download,
-} from 'lucide-react';
+import { FileText, ArrowLeft, User, GraduationCap, ClipboardList, CheckCircle, XCircle, Clock, ExternalLink, Download } from 'lucide-react';
 
 import { useState } from 'react';
 
@@ -27,8 +9,6 @@ export default function ApplicationDetails({
     application,
     requirements = [],
 }) {
-    const [sidebarOpen, setSidebarOpen] =
-        useState(false);
 
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
@@ -156,6 +136,14 @@ export default function ApplicationDetails({
     ).length;
 
     const totalRequirements = requirements.length;
+    const { errors = {} } = usePage().props;
+    const outstandingRequirements = requirements.filter(
+        (requirement) => requirement.is_required && (
+            !requirement.submitted ||
+            requirement.submission?.verification_status !== 'Approved'
+        )
+    );
+    const canApprove = outstandingRequirements.length === 0;
 
     /*
     |--------------------------------------------------------------------------
@@ -164,6 +152,7 @@ export default function ApplicationDetails({
     */
 
     const updateApplicationStatus = (status) => {
+        if (status === 'Approved' && !canApprove) return;
         const confirmed = window.confirm(
             `Are you sure you want to mark this application as ${status}?`
         );
@@ -258,236 +247,12 @@ export default function ApplicationDetails({
 
             <div className="min-h-screen bg-gray-50">
 
-                {/* =====================================================
-                    MOBILE HEADER
-                ===================================================== */}
-
-                <header
-                    className="sticky top-0 z-40 flex h-16 items-center justify-between px-4 text-white shadow-md lg:hidden"
-                    style={{ backgroundColor: maroon }}
-                >
-                    <div className="flex items-center gap-3">
-
-                        <button
-                            type="button"
-                            onClick={() => setSidebarOpen(true)}
-                            className="rounded-lg p-2 transition hover:bg-white/10"
-                            aria-label="Open navigation"
-                        >
-                            <Menu size={23} />
-                        </button>
-
-                        <div className="flex items-center gap-2">
-
-                            <img
-                                src="/images/law-logo.jpeg"
-                                alt="USeP School of Law"
-                                className="h-9 w-9 rounded-full bg-white object-contain"
-                            />
-
-                            <div>
-
-                                <p className="text-sm font-bold leading-tight">
-                                    USeP School of Law
-                                </p>
-
-                                <p className="text-[11px] text-white/75">
-                                    Administration
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-                </header>
-
-
-                {/* =====================================================
-                    MOBILE OVERLAY
-                ===================================================== */}
-
-                {sidebarOpen && (
-                    <div
-                        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                )}
-
-
-                {/* =====================================================
-                    SIDEBAR
-                ===================================================== */}
-
-                <aside
-                    className={`
-                        fixed
-                        left-0
-                        top-0
-                        z-50
-                        flex
-                        h-screen
-                        w-72
-                        flex-col
-                        text-white
-                        shadow-xl
-                        transition-transform
-                        duration-300
-                        lg:w-64
-                        lg:translate-x-0
-                        ${sidebarOpen
-                            ? 'translate-x-0'
-                            : '-translate-x-full'
-                        }
-                    `}
-                    style={{ backgroundColor: darkMaroon }}
-                >
-
-                    {/* =================================================
-                        SIDEBAR BRAND
-                    ================================================= */}
-
-                    <div className="border-b border-white/10 px-5 py-6">
-
-                        <div className="flex items-center gap-3">
-
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-1">
-
-                                <img
-                                    src="/images/law-logo.jpeg"
-                                    alt="USeP School of Law"
-                                    className="h-full w-full rounded-full object-contain"
-                                />
-
-                            </div>
-
-
-                            <div className="min-w-0">
-
-                                <h1 className="truncate text-base font-bold">
-                                    USeP School of Law
-                                </h1>
-
-                                <p className="mt-0.5 text-xs text-white/65">
-                                    Administration Portal
-                                </p>
-
-                            </div>
-
-
-                            <button
-                                type="button"
-                                onClick={() => setSidebarOpen(false)}
-                                className="ml-auto rounded-lg p-2 text-white/80 hover:bg-white/10 lg:hidden"
-                                aria-label="Close navigation"
-                            >
-                                <X size={20} />
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    {/* =================================================
-                        NAVIGATION
-                    ================================================= */}
-
-                    <nav className="flex-1 space-y-1 px-3 py-5">
-
-                        <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-widest text-white/40">
-                            Main Menu
-                        </p>
-
-
-                        <Link
-                            href="/admin/dashboard"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <LayoutDashboard size={20} />
-                            <span>Dashboard</span>
-                        </Link>
-
-
-                        <Link
-                            href="/admin/applications"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-white shadow-sm transition"
-                            style={{ backgroundColor: maroon }}
-                        >
-                            <FileText size={20} />
-                            <span>Applications</span>
-                        </Link>
-                        <Link
-                            href="/admin/examinees"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <UserCheck size={20} />
-                            <span>Examinees</span>
-                        </Link>
-
-
-                        <Link
-                            href="/admin/interviewees"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <CalendarCheck size={20} />
-                            <span>Interviewees</span>
-                        </Link>
-
-                        {/* FINAL LIST */}
-
-                        <Link
-                            href="/admin/final-list"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <ClipboardCheck size={20} />
-                            <span>Final List</span>
-                        </Link>
-
-
-                        <Link
-                            href="/admin/examination-schedules"
-                            onClick={() => setSidebarOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-4 py-3 text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <CalendarDays size={20} />
-                            <span>Examination Schedules</span>
-                        </Link>
-
-                    </nav>
-
-
-                    {/* =================================================
-                        SIDEBAR FOOTER
-                    ================================================= */}
-
-                    <div className="border-t border-white/10 p-3">
-
-                        <Link
-                            href="/logout"
-                            method="post"
-                            as="button"
-                            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <LogOut size={19} />
-                            <span>Logout</span>
-                        </Link>
-
-                    </div>
-
-                </aside>
-
 
                 {/* =====================================================
                     MAIN CONTENT
                 ===================================================== */}
 
-                <main className="min-h-screen lg:ml-64">
+                <PortalLayout audience="admin">
 
                     <div className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
 
@@ -1203,7 +968,8 @@ export default function ApplicationDetails({
                                                                             font-medium
                                                                             text-white
                                                                             transition
-                                                                            hover:bg-green-700
+                                                                            disabled:cursor-not-allowed disabled:opacity-50
+                                                hover:bg-green-700
                                                                         "
                                                                     >
 
@@ -1228,7 +994,8 @@ export default function ApplicationDetails({
                                                                             items-center
                                                                             gap-2
                                                                             rounded-lg
-                                                                            bg-red-600
+                                                                            disabled:cursor-not-allowed disabled:opacity-50
+                                                bg-red-600
                                                                             px-4
                                                                             py-2.5
                                                                             text-sm
@@ -1352,6 +1119,30 @@ export default function ApplicationDetails({
                                         "
                                     />
 
+                                    {application.schedule_id && (
+                                        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                                            This application has an examination booking. Staff must resolve the booking before reopening or declining it.
+                                        </p>
+                                    )}
+                                    {outstandingRequirements.length > 0 && (
+                                        <div id="approval-requirements" className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                                            <p className="font-semibold">Approve these required documents before approving the application:</p>
+                                            <ul className="mt-2 list-disc space-y-1 pl-5">
+                                                {outstandingRequirements.map((requirement) => (
+                                                    <li key={requirement.requirement_id}>
+                                                        {requirement.requirement_name} — {getRequirementStatus(requirement).label}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {errors.application_status && (
+                                        <p role="alert" className="mt-3 text-sm text-red-700">{errors.application_status}</p>
+                                    )}
+                                    {errors.remarks && (
+                                        <p role="alert" className="mt-3 text-sm text-red-700">{errors.remarks}</p>
+                                    )}
+
                                     <div className="mt-5 flex flex-wrap gap-3">
 
                                         <button
@@ -1361,11 +1152,13 @@ export default function ApplicationDetails({
                                                     'Under Review'
                                                 )
                                             }
+                                            disabled={Boolean(application.schedule_id)}
                                             className="
                                                 inline-flex
                                                 items-center
                                                 gap-2
                                                 rounded-lg
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 bg-orange-600
                                                 px-5
                                                 py-3
@@ -1387,6 +1180,8 @@ export default function ApplicationDetails({
                                                     'Approved'
                                                 )
                                             }
+                                            disabled={!canApprove}
+                                            aria-describedby={!canApprove ? 'approval-requirements' : undefined}
                                             className="
                                                 inline-flex
                                                 items-center
@@ -1398,6 +1193,7 @@ export default function ApplicationDetails({
                                                 font-medium
                                                 text-white
                                                 transition
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 hover:bg-green-700
                                             "
                                         >
@@ -1413,11 +1209,13 @@ export default function ApplicationDetails({
                                                     'Declined'
                                                 )
                                             }
+                                            disabled={Boolean(application.schedule_id)}
                                             className="
                                                 inline-flex
                                                 items-center
                                                 gap-2
                                                 rounded-lg
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 bg-red-600
                                                 px-5
                                                 py-3
@@ -1442,7 +1240,7 @@ export default function ApplicationDetails({
 
                     </div>
 
-                </main>
+                </PortalLayout>
 
             </div>
         </>

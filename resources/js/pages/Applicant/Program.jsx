@@ -1,3 +1,4 @@
+import PortalLayout from '@/layouts/portal-layout';
 import {
     Head,
     Link,
@@ -5,32 +6,15 @@ import {
     usePage,
 } from '@inertiajs/react';
 
-import {
-    AlertCircle,
-    CheckCircle,
-    ArrowRight,
-    LayoutDashboard,
-    GraduationCap,
-    FileText,
-    CalendarDays,
-    ClipboardList,
-    User,
-    LogOut,
-    Menu,
-    X,
-    Scale,
-    BookOpen,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowRight, Scale, BookOpen } from 'lucide-react';
 
-import { useState } from 'react';
 
 export default function Program({
     hasProfile,
+    application = null,
 }) {
     const { flash } = usePage().props;
 
-    const [sidebarOpen, setSidebarOpen] =
-        useState(false);
 
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
@@ -42,7 +26,7 @@ export default function Program({
         processing,
         errors,
     } = useForm({
-        program: '',
+        program: application?.program || '',
     });
 
     /*
@@ -51,8 +35,11 @@ export default function Program({
     |--------------------------------------------------------------------------
     */
 
+    const isLocked = ['Approved', 'Completed'].includes(application?.application_status) || Boolean(application?.schedule_id);
+
     const submit = (e) => {
         e.preventDefault();
+        if (isLocked) return;
 
         post('/applicant/program');
     };
@@ -69,435 +56,12 @@ export default function Program({
         return (
             <div className="min-h-screen bg-gray-50">
 
-                {/* =====================================================
-                    MOBILE HEADER
-                ===================================================== */}
-
-                <header
-                    className="
-                        sticky top-0 z-40
-                        flex h-16
-                        items-center justify-between
-                        px-4
-                        text-white
-                        shadow-md
-                        lg:hidden
-                    "
-                    style={{
-                        backgroundColor: maroon,
-                    }}
-                >
-                    <div className="flex items-center gap-3">
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setSidebarOpen(true)
-                            }
-                            className="
-                                rounded-lg
-                                p-2
-                                transition
-                                hover:bg-white/10
-                            "
-                            aria-label="Open navigation"
-                        >
-                            <Menu size={23} />
-                        </button>
-
-                        <div className="flex items-center gap-2">
-
-                            <img
-                                src="/images/law-logo.jpeg"
-                                alt="USeP School of Law"
-                                className="
-                                    h-9 w-9
-                                    rounded-full
-                                    bg-white
-                                    object-contain
-                                "
-                            />
-
-                            <div>
-
-                                <p className="text-sm font-bold leading-tight">
-                                    USeP School of Law
-                                </p>
-
-                                <p className="text-[11px] text-white/75">
-                                    Admission Portal
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-                </header>
-
-
-                {/* =====================================================
-                    MOBILE OVERLAY
-                ===================================================== */}
-
-                {sidebarOpen && (
-                    <div
-                        className="
-                            fixed inset-0
-                            z-40
-                            bg-black/50
-                            lg:hidden
-                        "
-                        onClick={() =>
-                            setSidebarOpen(false)
-                        }
-                    />
-                )}
-
-
-                {/* =====================================================
-                    SIDEBAR
-                ===================================================== */}
-
-                <aside
-                    className={`
-                        fixed
-                        left-0
-                        top-0
-                        z-50
-                        flex
-                        h-screen
-                        w-72
-                        flex-col
-                        text-white
-                        shadow-xl
-                        transition-transform
-                        duration-300
-                        lg:w-64
-                        lg:translate-x-0
-                        ${
-                            sidebarOpen
-                                ? 'translate-x-0'
-                                : '-translate-x-full'
-                        }
-                    `}
-                    style={{
-                        backgroundColor:
-                            darkMaroon,
-                    }}
-                >
-
-                    {/* SIDEBAR BRAND */}
-
-                    <div className="border-b border-white/10 px-5 py-6">
-
-                        <div className="flex items-center gap-3">
-
-                            <div
-                                className="
-                                    flex
-                                    h-12
-                                    w-12
-                                    shrink-0
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    bg-white
-                                    p-1
-                                "
-                            >
-                                <img
-                                    src="/images/law-logo.jpeg"
-                                    alt="USeP School of Law"
-                                    className="
-                                        h-full
-                                        w-full
-                                        rounded-full
-                                        object-contain
-                                    "
-                                />
-                            </div>
-
-                            <div className="min-w-0">
-
-                                <h1 className="truncate text-base font-bold">
-                                    USeP School of Law
-                                </h1>
-
-                                <p className="mt-0.5 text-xs text-white/65">
-                                    Admission Portal
-                                </p>
-
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setSidebarOpen(false)
-                                }
-                                className="
-                                    ml-auto
-                                    rounded-lg
-                                    p-2
-                                    text-white/80
-                                    transition
-                                    hover:bg-white/10
-                                    lg:hidden
-                                "
-                            >
-                                <X size={20} />
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-                    {/* =================================================
-                        NAVIGATION
-                    ================================================= */}
-
-                    <nav className="flex-1 space-y-1 px-3 py-5">
-
-                        <p
-                            className="
-                                mb-3
-                                px-3
-                                text-[10px]
-                                font-bold
-                                uppercase
-                                tracking-widest
-                                text-white/40
-                            "
-                        >
-                            Main Menu
-                        </p>
-
-
-                        {/* DASHBOARD */}
-
-                        <Link
-                            href="/dashboard"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <LayoutDashboard
-                                size={20}
-                            />
-
-                            <span>
-                                Dashboard
-                            </span>
-                        </Link>
-
-
-                        {/* CHOOSE PROGRAM - ACTIVE */}
-
-                        <Link
-                            href="/applicant/program"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                font-medium
-                                text-white
-                                shadow-sm
-                            "
-                            style={{
-                                backgroundColor:
-                                    maroon,
-                            }}
-                        >
-                            <GraduationCap
-                                size={20}
-                            />
-
-                            <span>
-                                Choose Program
-                            </span>
-                        </Link>
-
-
-                        {/* REQUIREMENTS */}
-
-                        <Link
-                            href="/applicant/requirements"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <FileText size={20} />
-
-                            <span>
-                                Requirements
-                            </span>
-                        </Link>
-
-
-                        {/* EXAMINATION */}
-
-                        <Link
-                            href="/applicant/examination"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <CalendarDays
-                                size={20}
-                            />
-
-                            <span>
-                                Examination
-                            </span>
-                        </Link>
-
-
-                        {/* APPLICATION STATUS */}
-
-                        <Link
-                            href="/applicant/status"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <ClipboardList
-                                size={20}
-                            />
-
-                            <span>
-                                Application Status
-                            </span>
-                        </Link>
-
-
-                        {/* PERSONAL INFORMATION */}
-
-                        <Link
-                            href="/personal-details"
-                            onClick={() =>
-                                setSidebarOpen(false)
-                            }
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <User size={20} />
-
-                            <span>
-                                Personal Information
-                            </span>
-                        </Link>
-
-                    </nav>
-
-
-                    {/* =================================================
-                        LOGOUT
-                    ================================================= */}
-
-                    <div className="border-t border-white/10 p-3">
-
-                        <Link
-                            href="/logout"
-                            method="post"
-                            as="button"
-                            className="
-                                flex
-                                w-full
-                                items-center
-                                gap-3
-                                rounded-xl
-                                px-4
-                                py-3
-                                text-sm
-                                font-medium
-                                text-white/75
-                                transition
-                                hover:bg-white/10
-                                hover:text-white
-                            "
-                        >
-                            <LogOut size={19} />
-
-                            <span>
-                                Logout
-                            </span>
-                        </Link>
-
-                    </div>
-
-                </aside>
-
 
                 {/* =====================================================
                     MAIN CONTENT
                 ===================================================== */}
 
-                <main className="min-h-screen lg:ml-64">
+                <PortalLayout audience="applicant">
 
                     <div
                         className="
@@ -514,7 +78,7 @@ export default function Program({
                         {children}
                     </div>
 
-                </main>
+                </PortalLayout>
 
             </div>
         );
@@ -917,7 +481,13 @@ export default function Program({
                         FORM
                     ================================================= */}
 
+                    {isLocked && (
+                        <p role="status" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                            Your application is locked. Contact admissions if you need to change your program or documents.
+                        </p>
+                    )}
                     <form onSubmit={submit}>
+                        <fieldset disabled={isLocked} className="min-w-0 border-0 p-0">
 
                         <div
                             className="
@@ -1367,7 +937,7 @@ export default function Program({
                             <button
                                 type="submit"
                                 disabled={
-                                    !data.program ||
+                                    isLocked || !data.program ||
                                     processing
                                 }
                                 className="
@@ -1389,7 +959,7 @@ export default function Program({
                                     disabled:opacity-60
                                 "
                                 style={
-                                    !data.program ||
+                                    isLocked || !data.program ||
                                     processing
                                         ? {}
                                         : {
@@ -1411,6 +981,7 @@ export default function Program({
 
                         </div>
 
+                    </fieldset>
                     </form>
 
 

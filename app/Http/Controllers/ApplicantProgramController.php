@@ -6,6 +6,8 @@ use App\Models\Application;
 use App\Models\ApplicantProfile;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ApplicantProgramController extends Controller
 {
@@ -49,6 +51,7 @@ class ApplicantProgramController extends Controller
         return Inertia::render(
             'Applicant/Program',
             [
+                'application' => $profile ? Application::where('applicant_profile_id', $profile->id)->first() : null,
                 'hasProfile' =>
                     $profile !== null,
 
@@ -134,53 +137,26 @@ class ApplicantProgramController extends Controller
         |
         */
 
-        $application =
-            Application::firstOrNew([
-                'applicant_profile_id' =>
-                    $profile->id,
-            ]);
+        return DB::transaction(function () use ($profile, $validated) {
+            $application = Application::where('applicant_profile_id', $profile->id)
+                ->lockForUpdate()->first();
 
+            if ($application && (in_array($application->application_status, ['Approved', 'Completed'], true) || $application->schedule_id)) {
+                throw ValidationException::withMessages([
+                    'program' => 'This application is locked. Contact admissions to request corrections.',
+                ]);
+            }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Program
-        |--------------------------------------------------------------------------
-        */
+            $application ??= new Application(['applicant_profile_id' => $profile->id]);
+            $application->program = $validated['program'];
+            if (!$application->exists || empty($application->academic_year)) {
+                $application->academic_year = $this->getCurrentAcademicYear();
+            }
+            $application->save();
 
-        $application->program =
-            $validated['program'];
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Assign Academic Year Only Once
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            !$application->exists ||
-            empty($application->academic_year)
-        ) {
-            $application->academic_year =
-                $this->getCurrentAcademicYear();
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Save Application
-        |--------------------------------------------------------------------------
-        */
-
-        $application->save();
-
-
-        return redirect()
-            ->route('applicant.requirements')
-            ->with(
-                'success',
-                'Program selected successfully.'
-            );
+            return redirect()->route('applicant.requirements')
+                ->with('success', 'Program selected successfully.');
+        });
     }
 
 

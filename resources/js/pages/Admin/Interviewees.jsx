@@ -1,25 +1,7 @@
+import PortalLayout from '@/layouts/portal-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import {
-    AlertCircle,
-    CalendarCheck,
-    CalendarDays,
-    CheckCircle2,
-    ClipboardCheck,
-    Clock,
-    FileText,
-    GraduationCap,
-    LayoutDashboard,
-    LogOut,
-    Mail,
-    MapPin,
-    Menu,
-    Phone,
-    Search,
-    UserCheck,
-    X,
-    XCircle,
-} from 'lucide-react';
+import { AlertCircle, CalendarCheck, CalendarDays, CheckCircle2, Clock, GraduationCap, Mail, MapPin, Phone, Search, X, XCircle } from 'lucide-react';
 
 export default function Interviewees({
     interviewees = [],
@@ -27,7 +9,6 @@ export default function Interviewees({
     const { props } = usePage();
     const flash = props.flash ?? {};
 
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [academicYearFilter, setAcademicYearFilter] = useState('All');
     const [programFilter, setProgramFilter] = useState('All');
@@ -203,169 +184,9 @@ export default function Interviewees({
             <Head title="Interviewees" />
 
             <div className="min-h-screen bg-gray-50">
-                <header
-                    className="sticky top-0 z-40 flex h-16 items-center px-4 text-white shadow-md lg:hidden"
-                    style={{ backgroundColor: maroon }}
-                >
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setSidebarOpen(true)}
-                            className="rounded-lg p-2 transition hover:bg-white/10"
-                            aria-label="Open navigation"
-                        >
-                            <Menu size={23} />
-                        </button>
 
-                        <img
-                            src="/images/law-logo.jpeg"
-                            alt="USeP School of Law"
-                            className="h-9 w-9 rounded-full bg-white object-contain"
-                        />
 
-                        <div>
-                            <p className="text-sm font-bold leading-tight">
-                                USeP School of Law
-                            </p>
-                            <p className="text-[11px] text-white/75">
-                                Administration
-                            </p>
-                        </div>
-                    </div>
-                </header>
-
-                {sidebarOpen && (
-                    <div
-                        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                )}
-
-                <aside
-                    className={`
-                        fixed
-                        left-0
-                        top-0
-                        z-50
-                        flex
-                        h-screen
-                        w-72
-                        flex-col
-                        text-white
-                        shadow-xl
-                        transition-transform
-                        duration-300
-                        lg:w-64
-                        lg:translate-x-0
-                        ${
-                            sidebarOpen
-                                ? 'translate-x-0'
-                                : '-translate-x-full'
-                        }
-                    `}
-                    style={{
-                        backgroundColor:
-                            darkMaroon,
-                    }}
-                >
-                    <div className="border-b border-white/10 px-5 py-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-1">
-                                <img
-                                    src="/images/law-logo.jpeg"
-                                    alt="USeP School of Law"
-                                    className="h-full w-full rounded-full object-contain"
-                                />
-                            </div>
-
-                            <div className="min-w-0">
-                                <h1 className="truncate text-base font-bold">
-                                    USeP School of Law
-                                </h1>
-
-                                <p className="mt-0.5 text-xs text-white/65">
-                                    Administration Portal
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setSidebarOpen(
-                                        false
-                                    )
-                                }
-                                className="ml-auto rounded-lg p-2 text-white/80 transition hover:bg-white/10 lg:hidden"
-                                aria-label="Close navigation"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                    </div>
-
-                    <nav className="flex-1 space-y-1 px-3 py-5">
-                        <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-widest text-white/40">
-                            Main Menu
-                        </p>
-
-                        <NavigationItem
-                            href="/admin/dashboard"
-                            icon={LayoutDashboard}
-                            label="Dashboard"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-
-                        <NavigationItem
-                            href="/admin/applications"
-                            icon={FileText}
-                            label="Applications"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-                        <NavigationItem
-                            href="/admin/examinees"
-                            icon={UserCheck}
-                            label="Examinees"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-
-                        <NavigationItem
-                            href="/admin/interviewees"
-                            icon={CalendarCheck}
-                            label="Interviewees"
-                            active
-                            maroon={maroon}
-                            onClick={() => setSidebarOpen(false)}
-                        />
-
-                        <NavigationItem
-                            href="/admin/final-list"
-                            icon={ClipboardCheck}
-                            label="Final List"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-
-                        <NavigationItem
-                            href="/admin/examination-schedules"
-                            icon={CalendarDays}
-                            label="Examination Schedules"
-                            onClick={() => setSidebarOpen(false)}
-                        />
-                    </nav>
-
-                    <div className="border-t border-white/10 p-3">
-                        <Link
-                            href="/logout"
-                            method="post"
-                            as="button"
-                            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-                        >
-                            <LogOut size={19} />
-                            <span>Logout</span>
-                        </Link>
-                    </div>
-                </aside>
-
-                <main className="min-h-screen p-4 sm:p-6 lg:ml-64 lg:p-8">
+                <PortalLayout audience="admin">
                     <div className="mx-auto max-w-7xl">
                         <div className="mb-7">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -707,7 +528,7 @@ export default function Interviewees({
                             <strong>{interviewees.length}</strong> interviewees
                         </div>
                     </div>
-                </main>
+                </PortalLayout>
             </div>
 
             {passTarget && (

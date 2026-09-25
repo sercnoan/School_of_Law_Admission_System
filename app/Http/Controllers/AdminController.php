@@ -171,6 +171,7 @@ class AdminController extends Controller
 
             ->select(
                 'applications.application_id',
+                'applications.schedule_id',
                 'applications.program',
                 'applications.application_status',
                 'applications.remarks',
@@ -607,81 +608,66 @@ class AdminController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function updateApplicationStatus(
-        Request $request,
-        $applicationId
-    ) {
-        $validated =
-            $request->validate([
-                'application_status' => [
-                    'required',
-                    'in:Pending,Under Review,Approved,Declined,Completed',
-                ],
+    public function updateApplicationStatus(Request $request, $applicationId)
+    {
+        $validated = $request->validate([
+            'application_status' => ['required', 'in:Pending,Under Review,Approved,Declined,Completed'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
 
-                'remarks' => [
-                    'nullable',
-                    'string',
-                    'max:2000',
-                ],
+        DB::transaction(function () use ($validated, $applicationId) {
+            $application = DB::table('applications')
+                ->where('application_id', $applicationId)
+                ->lockForUpdate()
+                ->first();
+
+            abort_if(!$application, 404, 'Application not found.');
+
+            if ($application->schedule_id && !in_array($validated['application_status'], ['Approved', 'Completed'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'application_status' => 'Resolve the existing examination booking before reopening or declining this application.',
+                ]);
+            }
+
+            if ($validated['application_status'] === 'Approved') {
+                $requirements = DB::table('requirements')
+                    ->whereIn('program', [$application->program, 'Both'])
+                    ->where('is_required', 1)
+                    ->orderBy('requirement_id')
+                    ->get();
+
+                $submissions = DB::table('requirement_submissions')
+                    ->where('application_id', $applicationId)
+                    ->whereIn('requirement_id', $requirements->pluck('requirement_id'))
+                    ->lockForUpdate()
+                    ->get()
+                    ->groupBy('requirement_id');
+
+                $outstanding = $requirements->filter(function ($requirement) use ($submissions) {
+                    $documents = $submissions->get($requirement->requirement_id);
+
+                    return !$documents || $documents->contains(
+                        fn ($document) => $document->verification_status !== 'Approved'
+                    );
+                });
+
+                if ($outstanding->isNotEmpty()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'application_status' => 'Approve every required document first. Needs attention: '
+                            .$outstanding->pluck('requirement_name')->implode('; ').'.',
+                    ]);
+                }
+            }
+
+            DB::table('applications')->where('application_id', $applicationId)->update([
+                'application_status' => $validated['application_status'],
+                'remarks' => $validated['remarks'] ?? null,
+                'updated_at' => now(),
             ]);
+        });
 
-
-        $application = DB::table(
-            'applications'
-        )
-
-            ->where(
-                'application_id',
-                $applicationId
-            )
-
-            ->first();
-
-
-        if (!$application) {
-            abort(
-                404,
-                'Application not found.'
-            );
-        }
-
-
-        DB::table(
-            'applications'
-        )
-
-            ->where(
-                'application_id',
-                $applicationId
-            )
-
-            ->update([
-                'application_status' =>
-                    $validated[
-                        'application_status'
-                    ],
-
-                'remarks' =>
-                    $validated[
-                        'remarks'
-                    ] ?? null,
-
-                'updated_at' =>
-                    now(),
-            ]);
-
-
-        return redirect()
-
-            ->route(
-                'admin.application.details',
-                $applicationId
-            )
-
-            ->with(
-                'success',
-                'Application status updated successfully.'
-            );
+        return redirect()->route('admin.application.details', $applicationId)
+            ->with('success', 'Application status updated successfully.');
     }
 
 

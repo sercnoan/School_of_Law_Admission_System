@@ -13,6 +13,9 @@ export default function ApplicationDetails({
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
 
+    const displayStatus = (status) =>
+        status === 'Under Review' ? 'Pending' : status;
+
     const [remarks, setRemarks] = useState(
         application.remarks || ''
     );
@@ -346,7 +349,7 @@ export default function ApplicationDetails({
                                             )}
                                         `}
                                     >
-                                        {application.application_status}
+                                        {displayStatus(application.application_status)}
                                     </span>
 
                                 </div>
@@ -1170,7 +1173,7 @@ export default function ApplicationDetails({
                                         >
                                             <Clock size={18} />
 
-                                            Mark Under Review
+                                            Mark Pending
                                         </button>
 
                                         <button

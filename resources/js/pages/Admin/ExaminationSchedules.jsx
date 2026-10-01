@@ -32,6 +32,9 @@ export default function ExaminationSchedules({
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
 
+    const displayApplicationStatus = (status) =>
+        status === 'Under Review' ? 'Pending' : status;
+
 
     /*
     |--------------------------------------------------------------------------
@@ -1888,7 +1891,7 @@ export default function ExaminationSchedules({
                                                                                                 `}
                                                                                             >
                                                                                                 {
-                                                                                                    applicant.application_status
+                                                                                                    displayApplicationStatus(applicant.application_status)
                                                                                                 }
                                                                                             </span>
 
@@ -1992,7 +1995,7 @@ export default function ExaminationSchedules({
                                                                                             `}
                                                                                         >
                                                                                             {
-                                                                                                applicant.application_status
+                                                                                                displayApplicationStatus(applicant.application_status)
                                                                                             }
                                                                                         </span>
 

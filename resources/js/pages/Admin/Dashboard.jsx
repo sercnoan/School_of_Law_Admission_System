@@ -2,7 +2,7 @@ import PortalLayout from '@/layouts/portal-layout';
 
 import { Head, Link } from '@inertiajs/react';
 
-import { FileText, Clock, CheckCircle, XCircle, Calendar, ChevronRight, TrendingUp, ClipboardCheck } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Calendar, ChevronRight, TrendingUp, ClipboardCheck } from 'lucide-react';
 
 
 export default function Dashboard({
@@ -124,7 +124,7 @@ export default function Dashboard({
                             </div>
 
 
-                            {/* PENDING */}
+                            {/* PENDING SUBMITTED APPLICATIONS */}
 
                             <div className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-6">
 
@@ -141,38 +141,7 @@ export default function Dashboard({
                                         </p>
 
                                         <p className="mt-2 text-xs text-gray-400">
-                                            Awaiting review
-                                        </p>
-
-                                    </div>
-
-                                    <div className="rounded-xl bg-yellow-50 p-3 text-yellow-700">
-                                        <Clock size={23} />
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* UNDER REVIEW */}
-
-                            <div className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-6">
-
-                                <div className="flex items-start justify-between">
-
-                                    <div>
-
-                                        <p className="text-sm font-medium text-gray-500">
-                                            Under Review
-                                        </p>
-
-                                        <p className="mt-2 text-3xl font-bold text-gray-900">
-                                            {statistics.underReviewApplications ?? 0}
-                                        </p>
-
-                                        <p className="mt-2 text-xs text-gray-400">
-                                            Currently being reviewed
+                                            Submitted and awaiting a decision
                                         </p>
 
                                     </div>
@@ -454,4 +423,3 @@ export default function Dashboard({
         </>
     );
 }
-

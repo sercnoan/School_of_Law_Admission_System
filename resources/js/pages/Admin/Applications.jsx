@@ -15,6 +15,9 @@ export default function Applications({
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
 
+    const displayStatus = (status) =>
+        status === 'Under Review' ? 'Pending' : status;
+
     /*
     |--------------------------------------------------------------------------
     | Filter Applications
@@ -350,12 +353,8 @@ export default function Applications({
                                         All Statuses
                                     </option>
 
-                                    <option value="Pending">
-                                        Pending
-                                    </option>
-
                                     <option value="Under Review">
-                                        Under Review
+                                        Pending
                                     </option>
 
                                     <option value="Approved">
@@ -695,7 +694,7 @@ export default function Applications({
                                                         />
 
                                                         {
-                                                            application.application_status
+                                                            displayStatus(application.application_status)
                                                         }
                                                     </span>
 
@@ -1129,7 +1128,7 @@ export default function Applications({
                                                                     />
 
                                                                     {
-                                                                        application.application_status
+                                                                        displayStatus(application.application_status)
                                                                     }
 
                                                                 </span>

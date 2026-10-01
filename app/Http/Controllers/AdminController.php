@@ -23,6 +23,7 @@ class AdminController extends Controller
         */
 
         $totalApplications = DB::table('applications')
+            ->where('application_status', '!=', 'Pending')
             ->count();
 
         /*
@@ -30,21 +31,12 @@ class AdminController extends Controller
         | Application Status Counts
         |--------------------------------------------------------------------------
         |
-        | applications.application_status supports:
-        | Pending, Under Review, Approved, Declined, Completed.
-        |
-        | Including all five statuses ensures:
-        |
-        | Total Applications =
-        | Pending + Under Review + Approved + Declined + Completed
+        | Pending applications are unfinished applicant drafts. They are not
+        | included in the admin dashboard until the applicant submits them.
         |
         */
 
         $pendingApplications = DB::table('applications')
-            ->where('application_status', 'Pending')
-            ->count();
-
-        $underReviewApplications = DB::table('applications')
             ->where('application_status', 'Under Review')
             ->count();
 
@@ -65,9 +57,6 @@ class AdminController extends Controller
 
                     'pendingApplications' =>
                         $pendingApplications,
-
-                    'underReviewApplications' =>
-                        $underReviewApplications,
 
                     'approvedApplications' =>
                         $approvedApplications,
@@ -103,6 +92,12 @@ class AdminController extends Controller
                 'applicant_profiles.user_id',
                 '=',
                 'users.id'
+            )
+
+            ->where(
+                'applications.application_status',
+                '!=',
+                'Pending'
             )
 
             ->select(

@@ -110,6 +110,7 @@ class AdminController extends Controller
                 'applications.updated_at',
 
                 'applicant_profiles.applicant_number',
+                'applicant_profiles.photo_path',
                 'applicant_profiles.full_name',
 
                 'users.email'
@@ -175,6 +176,7 @@ class AdminController extends Controller
 
                 'applicant_profiles.id as applicant_profile_id',
                 'applicant_profiles.applicant_number',
+                'applicant_profiles.photo_path',
                 'applicant_profiles.full_name',
                 'applicant_profiles.school_graduated',
                 'applicant_profiles.employment_status',
@@ -185,7 +187,10 @@ class AdminController extends Controller
                 'applicant_profiles.religion',
                 'applicant_profiles.civil_status',
                 'applicant_profiles.individual_income',
+                'applicant_profiles.individual_income_range',
                 'applicant_profiles.family_income',
+                'applicant_profiles.family_income_range',
+                'applicant_profiles.ethnic_affiliation',
                 'applicant_profiles.is_indigenous',
                 'applicant_profiles.indigenous_community',
                 'applicant_profiles.is_pwd',

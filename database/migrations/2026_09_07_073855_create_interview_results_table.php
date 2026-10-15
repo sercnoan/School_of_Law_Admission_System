@@ -12,7 +12,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->integer('application_id');
             $table->unsignedBigInteger('interview_id');
-            $table->enum('result', ['Pending','Passed','Failed'])->default('Pending');
+            $table->enum('result', ['Pending','Passed','Failed','Waitlisted'])->default('Pending');
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('decided_by')->nullable();
             $table->dateTime('decided_at')->nullable();

@@ -6,7 +6,8 @@ import {
     usePage,
 } from '@inertiajs/react';
 
-import { AlertCircle, CheckCircle, ArrowRight, Scale, BookOpen } from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowRight, Scale, BookOpen, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
 
 
 export default function Program({
@@ -17,7 +18,7 @@ export default function Program({
 
 
     const maroon = '#922b2b';
-    const darkMaroon = '#691f1f';
+    const [qualificationProgram, setQualificationProgram] = useState(null);
 
     const {
         data,
@@ -502,35 +503,22 @@ export default function Program({
                                 JURIS DOCTOR
                             ================================================= */}
 
+                            <div
+                                className={`relative flex flex-col overflow-hidden rounded-xl border bg-white transition ${
+                                    data.program === 'Juris Doctor [Thesis] (JD)'
+                                        ? 'border-[#922b2b] bg-[#fffafa]'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
                             <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
                                     setData(
                                         'program',
-                                        'Juris Doctor'
-                                    )
-                                }
-                                className={`
-                                    group
-                                    relative
-                                    overflow-hidden
-                                    rounded-2xl
-                                    border
-                                    bg-white
-                                    p-6
-                                    text-left
-                                    shadow-sm
-                                    transition
-                                    hover:-translate-y-1
-                                    hover:shadow-md
-                                    sm:p-8
-                                    ${
-                                        data.program ===
-                                        'Juris Doctor'
-                                            ? 'border-[#922b2b] ring-2 ring-[#922b2b]/10'
-                                            : 'border-gray-200 hover:border-red-200'
-                                    }
-                                `}
+                                        'Juris Doctor [Thesis] (JD)'
+                                    );
+                                }}
+                                className="group block w-full flex-1 p-5 pb-4 text-left sm:p-6 sm:pb-4"
                             >
 
                                 {/* ICON */}
@@ -538,8 +526,8 @@ export default function Program({
                                 <div
                                     className="
                                         flex
-                                        h-14
-                                        w-14
+                                        h-10
+                                        w-10
                                         items-center
                                         justify-center
                                         rounded-xl
@@ -550,46 +538,42 @@ export default function Program({
                                         color: maroon,
                                     }}
                                 >
-                                    <Scale size={27} />
+                                    <Scale size={20} />
                                 </div>
 
 
-                                <h2 className="mt-6 text-xl font-bold text-gray-900 sm:text-2xl">
-                                    Juris Doctor
+                                <h2 className="mt-4 text-lg font-bold text-gray-900">
+                                    Juris Doctor [Thesis] (JD)
                                 </h2>
 
 
-                                <p className="mt-3 text-sm leading-6 text-gray-500">
-                                    Apply for the Juris
-                                    Doctor program and
-                                    pursue professional
-                                    legal education at the
-                                    USeP School of Law.
+                                <p className="mt-2 text-sm leading-6 text-gray-500">
+                                    Professional legal education at the USeP School of Law.
                                 </p>
 
 
-                                <div className="mt-6">
+                                <div className="mt-5 flex flex-wrap items-center gap-3">
 
                                     <span
                                         className={`
                                             inline-flex
                                             items-center
-                                            rounded-full
-                                            px-4
-                                            py-2
+                                            rounded-lg
+                                            px-3
+                                            py-1.5
                                             text-sm
                                             font-semibold
                                             transition
                                             ${
                                                 data.program ===
-                                                'Juris Doctor'
+                                                'Juris Doctor [Thesis] (JD)'
                                                     ? 'text-white'
                                                     : 'bg-gray-100 text-gray-700'
                                             }
                                         `}
                                         style={
                                             data.program ===
-                                            'Juris Doctor'
+                                            'Juris Doctor [Thesis] (JD)'
                                                 ? {
                                                       backgroundColor:
                                                           maroon,
@@ -598,7 +582,7 @@ export default function Program({
                                         }
                                     >
                                         {data.program ===
-                                        'Juris Doctor'
+                                        'Juris Doctor [Thesis] (JD)'
                                             ? 'Selected'
                                             : 'Select Program'}
                                     </span>
@@ -609,16 +593,16 @@ export default function Program({
                                 {/* SELECTED INDICATOR */}
 
                                 {data.program ===
-                                    'Juris Doctor' && (
+                                    'Juris Doctor [Thesis] (JD)' && (
 
                                     <div
                                         className="
                                             absolute
-                                            right-5
-                                            top-5
+                                            right-4
+                                            top-4
                                             flex
-                                            h-9
-                                            w-9
+                                            h-7
+                                            w-7
                                             items-center
                                             justify-center
                                             rounded-full
@@ -630,7 +614,7 @@ export default function Program({
                                         }}
                                     >
                                         <CheckCircle
-                                            size={19}
+                                            size={15}
                                         />
                                     </div>
 
@@ -638,40 +622,51 @@ export default function Program({
 
                             </button>
 
+                            <div className="mx-5 mb-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-gray-100 pt-4 sm:mx-6 sm:mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setQualificationProgram(
+                                            'Juris Doctor [Thesis] (JD)'
+                                        )
+                                    }
+                                    className="text-sm font-semibold text-[#691f1f] transition hover:text-[#922b2b]"
+                                >
+                                    View Qualifications
+                                </button>
+                                <a
+                                    href="https://usep.edu.ph/sol/academic-programs-2/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#691f1f] transition hover:text-[#922b2b]"
+                                >
+                                    <ExternalLink size={16} />
+                                    View Prospectus
+                                </a>
+                            </div>
+                            </div>
+
 
                             {/* =================================================
-                                MASTER OF LEGAL STUDIES
+                                MASTER OF LEGAL STUDIES - JURIS DOCTOR
                             ================================================= */}
 
+                            <div
+                                className={`relative flex flex-col overflow-hidden rounded-xl border bg-white transition ${
+                                    data.program === 'Master of Legal Studies-Juris Doctor (MLS-JD)'
+                                        ? 'border-[#922b2b] bg-[#fffafa]'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
                             <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
                                     setData(
                                         'program',
-                                        'Master of Legal Studies'
-                                    )
-                                }
-                                className={`
-                                    group
-                                    relative
-                                    overflow-hidden
-                                    rounded-2xl
-                                    border
-                                    bg-white
-                                    p-6
-                                    text-left
-                                    shadow-sm
-                                    transition
-                                    hover:-translate-y-1
-                                    hover:shadow-md
-                                    sm:p-8
-                                    ${
-                                        data.program ===
-                                        'Master of Legal Studies'
-                                            ? 'border-[#922b2b] ring-2 ring-[#922b2b]/10'
-                                            : 'border-gray-200 hover:border-red-200'
-                                    }
-                                `}
+                                        'Master of Legal Studies-Juris Doctor (MLS-JD)'
+                                    );
+                                }}
+                                className="group block w-full flex-1 p-5 pb-4 text-left sm:p-6 sm:pb-4"
                             >
 
                                 {/* ICON */}
@@ -679,8 +674,8 @@ export default function Program({
                                 <div
                                     className="
                                         flex
-                                        h-14
-                                        w-14
+                                        h-10
+                                        w-10
                                         items-center
                                         justify-center
                                         rounded-xl
@@ -692,49 +687,43 @@ export default function Program({
                                     }}
                                 >
                                     <BookOpen
-                                        size={27}
+                                        size={20}
                                     />
                                 </div>
 
 
-                                <h2 className="mt-6 text-xl font-bold text-gray-900 sm:text-2xl">
-                                    Master of Legal
-                                    Studies
+                                <h2 className="mt-4 text-lg font-bold text-gray-900">
+                                    Master of Legal Studies-Juris Doctor (MLS-JD)
                                 </h2>
 
 
-                                <p className="mt-3 text-sm leading-6 text-gray-500">
-                                    Apply for the Master
-                                    of Legal Studies
-                                    program for advanced
-                                    interdisciplinary
-                                    study of law and legal
-                                    systems.
+                                <p className="mt-2 text-sm leading-6 text-gray-500">
+                                    A ladderized path for advanced interdisciplinary legal study.
                                 </p>
 
 
-                                <div className="mt-6">
+                                <div className="mt-5 flex flex-wrap items-center gap-3">
 
                                     <span
                                         className={`
                                             inline-flex
                                             items-center
-                                            rounded-full
-                                            px-4
-                                            py-2
+                                            rounded-lg
+                                            px-3
+                                            py-1.5
                                             text-sm
                                             font-semibold
                                             transition
                                             ${
                                                 data.program ===
-                                                'Master of Legal Studies'
+                                                'Master of Legal Studies-Juris Doctor (MLS-JD)'
                                                     ? 'text-white'
                                                     : 'bg-gray-100 text-gray-700'
                                             }
                                         `}
                                         style={
                                             data.program ===
-                                            'Master of Legal Studies'
+                                            'Master of Legal Studies-Juris Doctor (MLS-JD)'
                                                 ? {
                                                       backgroundColor:
                                                           maroon,
@@ -743,7 +732,7 @@ export default function Program({
                                         }
                                     >
                                         {data.program ===
-                                        'Master of Legal Studies'
+                                        'Master of Legal Studies-Juris Doctor (MLS-JD)'
                                             ? 'Selected'
                                             : 'Select Program'}
                                     </span>
@@ -754,16 +743,16 @@ export default function Program({
                                 {/* SELECTED INDICATOR */}
 
                                 {data.program ===
-                                    'Master of Legal Studies' && (
+                                    'Master of Legal Studies-Juris Doctor (MLS-JD)' && (
 
                                     <div
                                         className="
                                             absolute
-                                            right-5
-                                            top-5
+                                            right-4
+                                            top-4
                                             flex
-                                            h-9
-                                            w-9
+                                            h-7
+                                            w-7
                                             items-center
                                             justify-center
                                             rounded-full
@@ -775,13 +764,37 @@ export default function Program({
                                         }}
                                     >
                                         <CheckCircle
-                                            size={19}
+                                            size={15}
                                         />
                                     </div>
 
                                 )}
 
                             </button>
+
+                            <div className="mx-5 mb-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-gray-100 pt-4 sm:mx-6 sm:mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setQualificationProgram(
+                                            'Master of Legal Studies-Juris Doctor (MLS-JD)'
+                                        )
+                                    }
+                                    className="text-sm font-semibold text-[#691f1f] transition hover:text-[#922b2b]"
+                                >
+                                    View Qualifications
+                                </button>
+                                <a
+                                    href="https://usep.edu.ph/sol/academic-programs-2/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#691f1f] transition hover:text-[#922b2b]"
+                                >
+                                    <ExternalLink size={16} />
+                                    View Prospectus
+                                </a>
+                            </div>
+                            </div>
 
                         </div>
 
@@ -813,83 +826,6 @@ export default function Program({
                                 />
 
                                 {errors.program}
-                            </div>
-
-                        )}
-
-
-                        {/* =================================================
-                            SELECTED PROGRAM SUMMARY
-                        ================================================= */}
-
-                        {data.program && (
-
-                            <div
-                                className="
-                                    mt-6
-                                    flex
-                                    flex-col
-                                    gap-4
-                                    rounded-2xl
-                                    p-5
-                                    sm:flex-row
-                                    sm:items-center
-                                    sm:justify-between
-                                "
-                                style={{
-                                    backgroundColor:
-                                        '#f9eeee',
-                                    border:
-                                        '1px solid #ead0d0',
-                                }}
-                            >
-
-                                <div className="flex items-start gap-3">
-
-                                    <div
-                                        className="
-                                            flex
-                                            h-10
-                                            w-10
-                                            shrink-0
-                                            items-center
-                                            justify-center
-                                            rounded-xl
-                                        "
-                                        style={{
-                                            backgroundColor:
-                                                '#f1d9d9',
-                                            color: maroon,
-                                        }}
-                                    >
-                                        <CheckCircle
-                                            size={20}
-                                        />
-                                    </div>
-
-                                    <div>
-
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                            Selected
-                                            Program
-                                        </p>
-
-                                        <p
-                                            className="mt-1 font-bold"
-                                            style={{
-                                                color:
-                                                    darkMaroon,
-                                            }}
-                                        >
-                                            {
-                                                data.program
-                                            }
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
                             </div>
 
                         )}
@@ -983,6 +919,59 @@ export default function Program({
 
                     </fieldset>
                     </form>
+
+                    {qualificationProgram && (
+                        <div className="privacy-notice-backdrop" role="presentation">
+                            <section
+                                className="privacy-notice program-qualifications-notice"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="program-qualifications-title"
+                                aria-describedby="program-qualifications-description"
+                            >
+                                <div className="privacy-notice-icon" aria-hidden="true">
+                                    <BookOpen size={26} />
+                                </div>
+                                <p className="privacy-notice-eyebrow">
+                                    Admission Qualifications
+                                </p>
+                                <h2 id="program-qualifications-title">
+                                    {qualificationProgram}
+                                </h2>
+                                <div
+                                    id="program-qualifications-description"
+                                    className="privacy-notice-body"
+                                >
+                                    <p>
+                                        An applicant for admission to USeP-SoL&apos;s{' '}
+                                        {qualificationProgram === 'Juris Doctor [Thesis] (JD)'
+                                            ? 'Juris Doctor [Thesis] Program'
+                                            : 'Ladderized Master of Legal Studies-Juris Doctor (MLS-JD) Program'}{' '}
+                                        must have obtained, from a recognized and reputable college or university,
+                                        a Bachelor&apos;s Degree in Arts or Sciences or a higher academic degree, and
+                                        must have complied with the minimum requirements for law students set by
+                                        the Legal Education Board.
+                                    </p>
+
+                                    {qualificationProgram ===
+                                        'Master of Legal Studies-Juris Doctor (MLS-JD)' && (
+                                        <p>
+                                            <strong>
+                                                The applicant must also have at least two (2) years of work experience.
+                                            </strong>
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    className="privacy-notice-action"
+                                    onClick={() => setQualificationProgram(null)}
+                                >
+                                    Close
+                                </button>
+                            </section>
+                        </div>
+                    )}
 
 
                     {/* =================================================

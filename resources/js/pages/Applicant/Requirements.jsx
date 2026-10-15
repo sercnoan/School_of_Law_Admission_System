@@ -6,7 +6,7 @@ import {
     usePage,
 } from '@inertiajs/react';
 
-import { LayoutDashboard, User, FileText, GraduationCap, Upload, CheckCircle, XCircle, Clock, Eye, RefreshCw, AlertCircle, ArrowLeft, CalendarDays, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, User, FileText, GraduationCap, Upload, CheckCircle, XCircle, Clock, Eye, RefreshCw, AlertCircle, ArrowLeft, CalendarDays, ClipboardList, Trash2, X } from 'lucide-react';
 
 import { useState } from 'react';
 
@@ -22,6 +22,15 @@ export default function Requirements({
 
     const [uploading, setUploading] =
         useState(null);
+
+    const [removing, setRemoving] =
+        useState(null);
+
+    const [showReview, setShowReview] =
+        useState(false);
+
+    const [submitting, setSubmitting] =
+        useState(false);
 
     const [errors, setErrors] =
         useState({});
@@ -45,6 +54,48 @@ export default function Requirements({
                 Number(
                     submission.requirement_id
                 ) === Number(requirementId)
+        );
+    };
+
+
+    const handleRemove = (
+        requirementId,
+        requirementName
+    ) => {
+        if (isLocked || removing) {
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Remove the uploaded file for ${requirementName}? You will need to upload another file before submitting your application.`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setRemoving(requirementId);
+        setErrors((previous) => ({
+            ...previous,
+            [requirementId]: null,
+        }));
+
+        router.delete(
+            `/applicant/requirements/${requirementId}`,
+            {
+                preserveScroll: true,
+                onError: (error) => {
+                    setErrors((previous) => ({
+                        ...previous,
+                        [requirementId]:
+                            error.file ||
+                            'Unable to remove the file.',
+                    }));
+                },
+                onFinish: () => {
+                    setRemoving(null);
+                },
+            }
         );
     };
 
@@ -217,13 +268,17 @@ export default function Requirements({
 
     const handleSubmitApplication =
         () => {
-            if (isLocked) return;
-            const confirmed =
-                window.confirm(
-                    'Are you sure you want to submit your application? Make sure all required documents are uploaded.'
-                );
+            if (isLocked || !allRequiredSubmitted) {
+                return;
+            }
 
-            if (!confirmed) {
+            setShowReview(true);
+        };
+
+
+    const confirmSubmitApplication =
+        () => {
+            if (isLocked || !allRequiredSubmitted || submitting) {
                 return;
             }
 
@@ -232,6 +287,9 @@ export default function Requirements({
                 {},
                 {
                     preserveScroll: true,
+                    onStart: () => setSubmitting(true),
+                    onError: () => setSubmitting(false),
+                    onFinish: () => setSubmitting(false),
                 }
             );
         };
@@ -1087,42 +1145,45 @@ export default function Requirements({
 
                                                                 {/* VIEW DOCUMENT */}
 
-                                                                <a
-                                                                    href={`/storage/${submission.file_path}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="
-                                                                        inline-flex
-                                                                        w-fit
-                                                                        items-center
-                                                                        justify-center
-                                                                        gap-2
-                                                                        rounded-xl
-                                                                        border
-                                                                        px-4
-                                                                        py-2.5
-                                                                        text-sm
-                                                                        font-semibold
-                                                                        transition
-                                                                        hover:bg-[#f9eeee]
-                                                                    "
-                                                                    style={{
-                                                                        borderColor:
-                                                                            '#d9aaaa',
-                                                                        color: maroon,
-                                                                    }}
-                                                                >
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <a
+                                                                        href={`/storage/${submission.file_path}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-[#f9eeee]"
+                                                                        style={{
+                                                                            borderColor:
+                                                                                '#d9aaaa',
+                                                                            color: maroon,
+                                                                        }}
+                                                                    >
+                                                                        <Eye size={17} />
+                                                                        View Document
+                                                                    </a>
 
-                                                                    <Eye
-                                                                        size={
-                                                                            17
-                                                                        }
-                                                                    />
-
-                                                                    View
-                                                                    Document
-
-                                                                </a>
+                                                                    {!isLocked && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                handleRemove(
+                                                                                    requirement.requirement_id,
+                                                                                    requirement.requirement_name
+                                                                                )
+                                                                            }
+                                                                            disabled={removing === requirement.requirement_id}
+                                                                            className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                        >
+                                                                            {removing === requirement.requirement_id ? (
+                                                                                <RefreshCw size={17} className="animate-spin" />
+                                                                            ) : (
+                                                                                <Trash2 size={17} />
+                                                                            )}
+                                                                            {removing === requirement.requirement_id
+                                                                                ? 'Removing...'
+                                                                                : 'Remove File'}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
 
                                                             </div>
 
@@ -1176,6 +1237,14 @@ export default function Requirements({
                                                                             the
                                                                             admissions
                                                                             administrator.
+                                                                            Replacing
+                                                                            or
+                                                                            removing
+                                                                            it
+                                                                            will
+                                                                            require
+                                                                            another
+                                                                            review.
                                                                         </p>
 
                                                                     </div>
@@ -1297,7 +1366,8 @@ export default function Requirements({
                                                                                 and
                                                                                 upload
                                                                                 a
-                                                                                replacement.
+                                                                                new
+                                                                                PDF.
                                                                             </p>
 
 
@@ -1343,14 +1413,10 @@ export default function Requirements({
 
 
                                                     {/* =================================================
-                                                        UPLOAD / REPLACE
+                                                        UPLOAD
                                                     ================================================= */}
 
-                                                    {(
-                                                        !submission ||
-                                                        submission.verification_status ===
-                                                            'Declined'
-                                                    ) && (
+                                                    {!submission && !isLocked && (
 
                                                         <div className="mt-5">
 
@@ -1416,19 +1482,12 @@ export default function Requirements({
 
                                                                             <p className="mt-3 text-sm font-semibold text-gray-700">
 
-                                                                                {submission
-                                                                                    ? 'Replace Declined Document'
-                                                                                    : 'Upload Document'}
+                                                                                Upload Document
 
                                                                             </p>
 
                                                                             <p className="mt-1 text-xs text-gray-500">
-                                                                                PDF,
-                                                                                JPG,
-                                                                                JPEG,
-                                                                                or
-                                                                                PNG
-                                                                                •
+                                                                                PDF only •
                                                                                 Maximum
                                                                                 10MB
                                                                             </p>
@@ -1445,7 +1504,7 @@ export default function Requirements({
                                                             <input
                                                                 id={`file-${requirement.requirement_id}`}
                                                                 type="file"
-                                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                                accept="application/pdf,.pdf"
                                                                 className="hidden"
                                                                 disabled={
                                                                     isLocked || uploading ===
@@ -1540,9 +1599,10 @@ export default function Requirements({
                                                                 requirement
                                                                 has been
                                                                 approved.
-                                                                No further
-                                                                action is
-                                                                required.
+                                                                Remove it first
+                                                                if you need to
+                                                                upload a
+                                                                different PDF.
                                                             </p>
 
                                                         </div>
@@ -1613,7 +1673,7 @@ export default function Requirements({
                                             handleSubmitApplication
                                         }
                                         disabled={
-                                            isLocked || !allRequiredSubmitted ||
+                                            isLocked || submitting || !allRequiredSubmitted ||
                                             application.application_status !==
                                                 'Pending'
                                         }
@@ -1653,13 +1713,26 @@ export default function Requirements({
                                             size={18}
                                         />
 
-                                        Submit Application
+                                        Review and Submit
 
                                     </button>
 
                                 </div>
 
                             </div>
+
+                            {showReview && (
+                                <RequirementReview
+                                    application={application}
+                                    requirements={requiredRequirements}
+                                    getSubmission={getSubmission}
+                                    getVerificationStatus={getVerificationStatus}
+                                    formatFileSize={formatFileSize}
+                                    submitting={submitting}
+                                    onClose={() => setShowReview(false)}
+                                    onConfirm={confirmSubmitApplication}
+                                />
+                            )}
 
 
                             {/* =================================================
@@ -1727,13 +1800,11 @@ export default function Requirements({
                                             documents are
                                             clear, complete,
                                             and readable.
-                                            Documents
-                                            marked as
-                                            declined may be
-                                            replaced after
-                                            reviewing the
-                                            administrator's
-                                            remarks.
+                                            To change a
+                                            document, remove
+                                            the existing file
+                                            first, then upload
+                                            a new PDF.
                                         </p>
 
                                     </div>
@@ -1765,5 +1836,139 @@ export default function Requirements({
 
             </div>
         </>
+    );
+}
+
+
+function RequirementReview({
+    application,
+    requirements,
+    getSubmission,
+    getVerificationStatus,
+    formatFileSize,
+    submitting,
+    onClose,
+    onConfirm,
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="requirements-review-title"
+        >
+            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-5 sm:px-7">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#922b2b]">
+                            REVIEW BEFORE SUBMITTING
+                        </p>
+                        <h2
+                            id="requirements-review-title"
+                            className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl"
+                        >
+                            Confirm Your Admission Requirements
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-gray-500">
+                            Check each uploaded document carefully. Return to the requirements page if you need to remove or change a file.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting}
+                        aria-label="Close review"
+                        className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                    >
+                        <X size={21} />
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+                    <div className="mb-5 rounded-xl border border-[#ead0d0] bg-[#f9eeee] p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#922b2b]">
+                            Selected Program
+                        </p>
+                        <p className="mt-1 font-bold text-gray-900">
+                            {application.program}
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        {requirements.map((requirement) => {
+                            const submission = getSubmission(requirement.requirement_id);
+                            const verification = getVerificationStatus(submission);
+                            const StatusIcon = verification.icon;
+
+                            return (
+                                <div
+                                    key={requirement.requirement_id}
+                                    className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                                >
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#922b2b] shadow-sm">
+                                                <FileText size={19} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-gray-900">
+                                                    {requirement.requirement_name}
+                                                </p>
+                                                <p className="mt-1 break-all text-sm text-gray-600">
+                                                    {submission?.file_name || 'No document uploaded'}
+                                                </p>
+                                                {submission?.file_size && (
+                                                    <p className="mt-1 text-xs text-gray-400">
+                                                        {formatFileSize(submission.file_size)} · PDF
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${verification.className}`}>
+                                            <StatusIcon size={14} />
+                                            {verification.label}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="mt-5 flex items-start gap-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
+                        <AlertCircle size={19} className="mt-0.5 shrink-0" />
+                        <p className="text-sm leading-6">
+                            By submitting, you confirm that these documents are complete, readable, and correct for your application.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting}
+                        className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Back to Requirements
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={submitting}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#922b2b] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#691f1f] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {submitting ? (
+                            <RefreshCw size={18} className="animate-spin" />
+                        ) : (
+                            <CheckCircle size={18} />
+                        )}
+                        {submitting ? 'Submitting...' : 'Confirm and Submit'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }

@@ -69,7 +69,70 @@ class ApplicantRequirementController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Upload / Replace Requirement
+    | Remove Requirement Submission
+    |--------------------------------------------------------------------------
+    */
+
+    public function remove(Request $request, $requirementId)
+    {
+        return DB::transaction(function () use ($request, $requirementId) {
+            $profile = $request->user()->applicantProfile;
+
+            if (!$profile) {
+                return redirect()
+                    ->route('personal.details')
+                    ->with('error', 'Please complete your personal details first.');
+            }
+
+            $application = DB::table('applications')
+                ->where('applicant_profile_id', $profile->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$application) {
+                return redirect()
+                    ->route('applicant.program')
+                    ->with('error', 'Please select a program first.');
+            }
+
+            if (in_array($application->application_status, ['Approved', 'Completed'], true) || $application->schedule_id) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => 'This application is locked. Contact admissions to request corrections.',
+                ]);
+            }
+
+            $submission = DB::table('requirement_submissions')
+                ->where('application_id', $application->application_id)
+                ->where('requirement_id', $requirementId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$submission) {
+                return redirect()
+                    ->route('applicant.requirements')
+                    ->with('error', 'The submitted document could not be found.');
+            }
+
+            DB::table('requirement_submissions')
+                ->where('submission_id', $submission->submission_id)
+                ->delete();
+
+            if ($submission->file_path) {
+                DB::afterCommit(function () use ($submission) {
+                    Storage::disk('public')->delete($submission->file_path);
+                });
+            }
+
+            return redirect()
+                ->route('applicant.requirements')
+                ->with('success', 'Document removed. You may now upload a new PDF.');
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Upload Requirement
     |--------------------------------------------------------------------------
     */
 
@@ -88,7 +151,7 @@ class ApplicantRequirementController extends Controller
                 'file' => [
                     'required',
                     'file',
-                    'mimes:pdf,jpg,jpeg,png',
+                    'mimes:pdf',
                     'max:10240',
                 ],
             ]);
@@ -175,6 +238,12 @@ class ApplicantRequirementController extends Controller
                 )
                 ->first();
 
+            if ($existingSubmission) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => 'Remove the existing document before uploading another one.',
+                ]);
+            }
+
 
             /*
             |--------------------------------------------------------------------------
@@ -202,117 +271,35 @@ class ApplicantRequirementController extends Controller
             );
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Replace Existing Submission
-            |--------------------------------------------------------------------------
-            */
+            DB::table('requirement_submissions')
+                ->insert([
+                    'application_id' =>
+                        $application->application_id,
 
-            if ($existingSubmission) {
+                    'requirement_id' =>
+                        $requirementId,
 
-                /*
-                |--------------------------------------------------------------------------
-                | Delete Old Physical File
-                |--------------------------------------------------------------------------
-                */
+                    'file_name' =>
+                        $fileName,
 
-                if (
-                    $existingSubmission->file_path &&
-                    Storage::disk('public')->exists(
-                        $existingSubmission->file_path
-                    )
-                ) {
-                    Storage::disk('public')->delete(
-                        $existingSubmission->file_path
-                    );
-                }
+                    'file_path' =>
+                        $newFilePath,
 
+                    'file_type' =>
+                        $fileType,
 
-                /*
-                |--------------------------------------------------------------------------
-                | Update Existing Database Record
-                |--------------------------------------------------------------------------
-                */
+                    'file_size' =>
+                        $fileSize,
 
-                DB::table('requirement_submissions')
-                    ->where(
-                        'submission_id',
-                        $existingSubmission->submission_id
-                    )
-                    ->update([
-                        'file_name' =>
-                            $fileName,
+                    'verification_status' =>
+                        'Pending',
 
-                        'file_path' =>
-                            $newFilePath,
+                    'remarks' =>
+                        null,
 
-                        'file_type' =>
-                            $fileType,
-
-                        'file_size' =>
-                            $fileSize,
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Important:
-                        | Re-uploaded documents go back to Pending.
-                        |--------------------------------------------------------------------------
-                        */
-
-                        'verification_status' =>
-                            'Pending',
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Clear old admin remarks.
-                        |--------------------------------------------------------------------------
-                        */
-
-                        'remarks' =>
-                            null,
-
-                        'uploaded_at' =>
-                            now(),
-                    ]);
-
-            } else {
-
-                /*
-                |--------------------------------------------------------------------------
-                | Create New Submission
-                |--------------------------------------------------------------------------
-                */
-
-                DB::table('requirement_submissions')
-                    ->insert([
-                        'application_id' =>
-                            $application->application_id,
-
-                        'requirement_id' =>
-                            $requirementId,
-
-                        'file_name' =>
-                            $fileName,
-
-                        'file_path' =>
-                            $newFilePath,
-
-                        'file_type' =>
-                            $fileType,
-
-                        'file_size' =>
-                            $fileSize,
-
-                        'verification_status' =>
-                            'Pending',
-
-                        'remarks' =>
-                            null,
-
-                        'uploaded_at' =>
-                            now(),
-                    ]);
-            }
+                    'uploaded_at' =>
+                        now(),
+                ]);
 
 
             /*
@@ -323,12 +310,7 @@ class ApplicantRequirementController extends Controller
 
             return redirect()
                 ->route('applicant.requirements')
-                ->with(
-                    'success',
-                    $existingSubmission
-                        ? 'Document replaced successfully and is now pending review.'
-                        : 'Document uploaded successfully and is now pending review.'
-                );
+                ->with('success', 'Document uploaded successfully and is now pending review.');
 
         });
     }

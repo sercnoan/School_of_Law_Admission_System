@@ -111,6 +111,26 @@ Route::middleware([
         'personal.details.store'
     );
 
+    Route::put(
+        '/personal-details',
+        [
+            ApplicantProfileController::class,
+            'update'
+        ]
+    )->name(
+        'personal.details.update'
+    );
+
+    Route::post(
+        '/personal-details/update',
+        [
+            ApplicantProfileController::class,
+            'update'
+        ]
+    )->name(
+        'personal.details.update-with-photo'
+    );
+
 
     /*
     |--------------------------------------------------------------------------
@@ -171,6 +191,16 @@ Route::middleware([
         ]
     )->name(
         'applicant.requirements.upload'
+    );
+
+    Route::delete(
+        '/applicant/requirements/{requirementId}',
+        [
+            ApplicantRequirementController::class,
+            'remove'
+        ]
+    )->name(
+        'applicant.requirements.remove'
     );
 
 
@@ -484,6 +514,26 @@ Route::middleware([
                 ]
             )->name(
                 'admin.interviewees.fail'
+            );
+
+            Route::post(
+                '/interviewees/{applicationId}/waitlist',
+                [
+                    IntervieweeController::class,
+                    'waitlist'
+                ]
+            )->name(
+                'admin.interviewees.waitlist'
+            );
+
+            Route::get(
+                '/waitlisted',
+                [
+                    IntervieweeController::class,
+                    'waitlisted'
+                ]
+            )->name(
+                'admin.waitlisted'
             );
 
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ApplicantProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ApplicantProfileController extends Controller
@@ -50,7 +52,89 @@ class ApplicantProfileController extends Controller
                 );
         }
 
+        $validated = $this->validateProfile($request, true);
+        $photo = $validated['photo'];
+        unset($validated['photo']);
+
+        $photoPath = $photo->store(
+            "applicant-photos/{$user->id}",
+            'public'
+        );
+
+        ApplicantProfile::create([
+            'user_id' => $user->id,
+            'applicant_number' => $this->generateApplicantNumber(),
+            'photo_path' => $photoPath,
+            ...$validated,
+        ]);
+
+        return redirect()
+            ->route('personal.details')
+            ->with(
+                'success',
+                'Personal information saved successfully.'
+            );
+    }
+
+    public function update(Request $request)
+    {
+        $profile = ApplicantProfile::where(
+            'user_id',
+            $request->user()->id
+        )->firstOrFail();
+
+        $validated = $this->validateProfile(
+            $request,
+            !$profile->photo_path
+        );
+
+        $photo = $validated['photo'] ?? null;
+        unset($validated['photo']);
+
+        if ($photo) {
+            $oldPhotoPath = $profile->photo_path;
+            $newPhotoPath = $photo->store(
+                "applicant-photos/{$request->user()->id}",
+                'public'
+            );
+
+            try {
+                $profile->update([
+                    ...$validated,
+                    'photo_path' => $newPhotoPath,
+                ]);
+            } catch (\Throwable $exception) {
+                Storage::disk('public')->delete($newPhotoPath);
+                throw $exception;
+            }
+
+            if ($oldPhotoPath) {
+                Storage::disk('public')->delete($oldPhotoPath);
+            }
+        } else {
+            $profile->update($validated);
+        }
+
+        return redirect()
+            ->route('personal.details')
+            ->with(
+                'success',
+                'Personal information updated successfully.'
+            );
+    }
+
+    private function validateProfile(
+        Request $request,
+        bool $photoRequired = false
+    ): array
+    {
         $validated = $request->validate([
+            'photo' => [
+                $photoRequired ? 'required' : 'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:10240',
+            ],
             'full_name' => 'required|string|max:255',
             'school_graduated' => 'required|string|max:255',
             'employment_status' => 'required|string|max:100',
@@ -61,8 +145,34 @@ class ApplicantProfileController extends Controller
             'contact_number' => 'required|string|max:20',
             'religion' => 'required|string|max:100',
             'civil_status' => 'required|in:Single,Married,Widowed,Separated,Divorced',
-            'individual_income' => 'required|numeric|min:0',
-            'family_income' => 'required|numeric|min:0',
+            'individual_income' => 'nullable|numeric|min:0',
+            'individual_income_range' => [
+                'required',
+                Rule::in([
+                    'Below ₱10,000.00',
+                    '₱10,001.00 – ₱20,000.00',
+                    '₱20,001.00 – ₱30,000.00',
+                    '₱30,001.00 – ₱40,000.00',
+                    '₱40,001.00 – ₱50,000.00',
+                    '₱50,001.00 – ₱100,000.00',
+                    'Above ₱100,000.00',
+                ]),
+            ],
+            'family_income' => 'nullable|numeric|min:0',
+            'family_income_range' => [
+                'required',
+                Rule::in([
+                    'Below ₱10,000.00',
+                    '₱10,001.00 – ₱20,000.00',
+                    '₱20,001.00 – ₱30,000.00',
+                    '₱30,001.00 – ₱40,000.00',
+                    '₱40,001.00 – ₱50,000.00',
+                    '₱50,001.00 – ₱100,000.00',
+                    'Above ₱100,000.00',
+                ]),
+            ],
+            'ethnic_affiliation' => 'required|string|max:100',
+            'ethnic_affiliation_other' => 'required_if:ethnic_affiliation,Other|nullable|string|max:100',
             'is_indigenous' => 'required|boolean',
             'indigenous_community' => 'nullable|string|max:255',
             'is_pwd' => 'required|boolean',
@@ -98,42 +208,24 @@ class ApplicantProfileController extends Controller
                 ? trim($validated['gender_other'])
                 : $validated['gender'];
 
-        ApplicantProfile::create([
-            'user_id' => $user->id,
-            'applicant_number' => $this->generateApplicantNumber(),
-            'full_name' => $validated['full_name'],
-            'school_graduated' => $validated['school_graduated'],
-            'employment_status' => $validated['employment_status'],
-            'present_address' => $validated['present_address'],
-            'age' => $validated['age'],
-            'gender' => $genderToSave,
-            'contact_number' => $validated['contact_number'],
-            'religion' => $validated['religion'],
-            'civil_status' => $validated['civil_status'],
-            'individual_income' => $validated['individual_income'],
-            'family_income' => $validated['family_income'],
-            'is_indigenous' => $validated['is_indigenous'],
-            'indigenous_community' => $validated['indigenous_community'],
-            'is_pwd' => $validated['is_pwd'],
-            'pwd_type' => $validated['pwd_type'],
-        ]);
+        $validated['gender'] = $genderToSave;
+        unset($validated['gender_other']);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Return to Personal Information page
-        |--------------------------------------------------------------------------
-        |
-        | The GET request will now find the saved profile, so the frontend will
-        | show the read-only information view instead of the form.
-        |
-        */
+        $validated['ethnic_affiliation'] =
+            $validated['ethnic_affiliation'] === 'Other'
+                ? trim($validated['ethnic_affiliation_other'])
+                : $validated['ethnic_affiliation'];
+        unset($validated['ethnic_affiliation_other']);
 
-        return redirect()
-            ->route('personal.details')
-            ->with(
-                'success',
-                'Personal information saved successfully.'
-            );
+        if ($validated['family_income'] === null) {
+            unset($validated['family_income']);
+        }
+
+        if ($validated['individual_income'] === null) {
+            unset($validated['individual_income']);
+        }
+
+        return $validated;
     }
 
     private function generateApplicantNumber(): string

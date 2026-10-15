@@ -4,7 +4,7 @@ import { GraduationCap, FileText, CalendarDays, ClipboardList, User, ChevronRigh
 
 const sections = [
     { href: '/personal-details', icon: User, title: 'Personal information', description: 'Your applicant details.' },
-    { href: '/applicant/program', icon: GraduationCap, title: 'Choose program', description: 'Juris Doctor or Master of Legal Studies.' },
+    { href: '/applicant/program', icon: GraduationCap, title: 'Choose program', description: 'Juris Doctor [Thesis] (JD) or Master of Legal Studies-Juris Doctor (MLS-JD).' },
     { href: '/applicant/requirements', icon: FileText, title: 'Documents', description: 'Upload requirements and check feedback.' },
     { href: '/applicant/examination', icon: CalendarDays, title: 'Examination', description: 'Available schedules and your booking.' },
     { href: '/applicant/status', icon: ClipboardList, title: 'Application status', description: 'Review progress, results, and next steps.' },

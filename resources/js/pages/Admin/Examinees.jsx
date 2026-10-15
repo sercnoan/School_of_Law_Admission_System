@@ -819,12 +819,12 @@ export default function Examinees({
                                         All Programs
                                     </option>
 
-                                    <option value="Juris Doctor">
-                                        Juris Doctor
+                                    <option value="Juris Doctor [Thesis] (JD)">
+                                        Juris Doctor [Thesis] (JD)
                                     </option>
 
-                                    <option value="Master of Legal Studies">
-                                        Master of Legal Studies
+                                    <option value="Master of Legal Studies-Juris Doctor (MLS-JD)">
+                                        Master of Legal Studies-Juris Doctor (MLS-JD)
                                     </option>
 
                                 </select>

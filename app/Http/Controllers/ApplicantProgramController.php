@@ -120,7 +120,7 @@ class ApplicantProgramController extends Controller
             'program' => [
                 'required',
                 'string',
-                'in:Juris Doctor,Master of Legal Studies',
+                'in:Juris Doctor [Thesis] (JD),Master of Legal Studies-Juris Doctor (MLS-JD)',
             ],
         ]);
 

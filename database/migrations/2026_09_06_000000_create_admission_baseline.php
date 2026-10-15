@@ -79,7 +79,7 @@ return new class extends Migration
             Schema::create('applications', function (Blueprint $table) {
             $table->integer('application_id', true);
             $table->unsignedBigInteger('applicant_profile_id');
-            $table->enum('program', ['Juris Doctor','Master of Legal Studies'])->nullable();
+            $table->enum('program', ['Juris Doctor [Thesis] (JD)','Master of Legal Studies-Juris Doctor (MLS-JD)'])->nullable();
             $table->integer('admin_id')->nullable();
             $table->integer('schedule_id')->nullable();
             $table->enum('application_status', ['Pending','Under Review','Approved','Declined','Completed'])->nullable()->default('Pending');
@@ -96,7 +96,7 @@ return new class extends Migration
             Schema::create('requirements', function (Blueprint $table) {
             $table->integer('requirement_id', true);
             $table->string('requirement_name', 150);
-            $table->enum('program', ['Juris Doctor','Master of Legal Studies','Both'])->default('Both');
+            $table->enum('program', ['Juris Doctor [Thesis] (JD)','Master of Legal Studies-Juris Doctor (MLS-JD)','Both'])->default('Both');
             $table->text('description')->nullable();
             $table->boolean('is_required')->nullable()->default('1');
             });

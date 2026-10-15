@@ -256,6 +256,18 @@ class ApplicantStatusController extends Controller
             ->first();
 
         /*
+        | Waitlist decisions are internal to admissions. Applicants continue
+        | to see a neutral pending result until a final decision is recorded.
+        */
+        if ($interviewResult?->result === 'Waitlisted') {
+            $interviewResult->result = 'Pending';
+            $interviewResult->remarks = null;
+            $interviewResult->decided_by = null;
+            $interviewResult->decided_at = null;
+            $interviewResult->notification_sent_at = null;
+        }
+
+        /*
         |--------------------------------------------------------------------------
         | Applicant Information
         |--------------------------------------------------------------------------

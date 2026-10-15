@@ -264,12 +264,6 @@ class IntervieweeController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Duplicate Decision
-        |--------------------------------------------------------------------------
-        */
-
         $existingResult =
             DB::table(
                 'interview_results'
@@ -281,25 +275,6 @@ class IntervieweeController extends Controller
                 )
 
                 ->first();
-
-
-        if (
-            $existingResult &&
-            in_array(
-                $existingResult->result,
-                [
-                    'Passed',
-                    'Failed',
-                ],
-                true
-            )
-        ) {
-
-            return back()->with(
-                'error',
-                'An interview result has already been recorded for this applicant.'
-            );
-        }
 
 
         /*
@@ -468,12 +443,6 @@ class IntervieweeController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Duplicate Decision
-        |--------------------------------------------------------------------------
-        */
-
         $existingResult =
             DB::table(
                 'interview_results'
@@ -485,25 +454,6 @@ class IntervieweeController extends Controller
                 )
 
                 ->first();
-
-
-        if (
-            $existingResult &&
-            in_array(
-                $existingResult->result,
-                [
-                    'Passed',
-                    'Failed',
-                ],
-                true
-            )
-        ) {
-
-            return back()->with(
-                'error',
-                'An interview result has already been recorded for this applicant.'
-            );
-        }
 
 
         /*
@@ -847,6 +797,94 @@ class IntervieweeController extends Controller
                 'The email could not be sent. Please check your mail configuration and try again.'
             );
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mark Interviewee as Waitlisted
+    |--------------------------------------------------------------------------
+    */
+
+    public function waitlist(Request $request, $applicationId)
+    {
+        $interviewee = $this->getEligibleInterviewee($applicationId);
+
+        if (!$interviewee) {
+            return back()->with(
+                'error',
+                'The interviewee could not be found or is not eligible for interview evaluation.'
+            );
+        }
+
+        if (!$this->interviewHasFinished($interviewee)) {
+            return back()->with(
+                'error',
+                'The interview has not finished yet. The result cannot be recorded.'
+            );
+        }
+
+        $existingResult = DB::table('interview_results')
+            ->where('application_id', $applicationId)
+            ->first();
+
+        $now = Carbon::now('Asia/Manila');
+
+        DB::table('interview_results')->updateOrInsert(
+            ['application_id' => $interviewee->application_id],
+            [
+                'interview_id' => $interviewee->interview_id,
+                'result' => 'Waitlisted',
+                'remarks' => null,
+                'decided_by' => auth()->id(),
+                'decided_at' => $now,
+                'notification_sent_at' => null,
+                'updated_at' => $now,
+                'created_at' => $existingResult?->created_at ?? $now,
+            ]
+        );
+
+        return back()->with(
+            'success',
+            $interviewee->full_name . ' has been added to the Waitlisted page.'
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Waitlisted Applicants
+    |--------------------------------------------------------------------------
+    */
+
+    public function waitlisted()
+    {
+        $waitlisted = DB::table('applications')
+            ->join('applicant_profiles', 'applications.applicant_profile_id', '=', 'applicant_profiles.id')
+            ->join('users', 'applicant_profiles.user_id', '=', 'users.id')
+            ->join('interview_schedules', 'applications.application_id', '=', 'interview_schedules.application_id')
+            ->join('interview_results', 'applications.application_id', '=', 'interview_results.application_id')
+            ->where('interview_results.result', 'Waitlisted')
+            ->select(
+                'applications.application_id',
+                'applications.program',
+                'applications.academic_year',
+                'applicant_profiles.applicant_number',
+                'applicant_profiles.full_name',
+                'applicant_profiles.contact_number',
+                'users.email',
+                'interview_schedules.interview_date',
+                'interview_schedules.interview_time',
+                'interview_schedules.venue as interview_venue',
+                'interview_results.decided_at as waitlisted_at'
+            )
+            ->orderByDesc('interview_results.decided_at')
+            ->orderBy('applicant_profiles.full_name')
+            ->get();
+
+        return Inertia::render('Admin/Waitlisted', [
+            'waitlisted' => $waitlisted,
+        ]);
     }
 
 

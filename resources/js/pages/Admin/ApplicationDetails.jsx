@@ -382,37 +382,39 @@ export default function ApplicationDetails({
 
                                 </div>
 
+                                <div className="border-b border-gray-100 bg-gray-50/60 p-6">
+                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                                        <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border-4 border-white bg-gray-100 shadow-sm sm:h-32 sm:w-32">
+                                            {application.photo_path ? (
+                                                <img
+                                                    src={`/storage/${application.photo_path}`}
+                                                    alt={`${application.full_name} applicant photo`}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                                    <User size={38} />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="break-words text-xl font-bold text-gray-900 sm:text-2xl">
+                                                {application.full_name}
+                                            </h3>
+
+                                            <p className="mt-1 break-all text-sm text-gray-600">
+                                                {application.email}
+                                            </p>
+
+                                            <span className="mt-3 inline-flex rounded-full border border-[#ead0d0] bg-white px-3 py-1.5 text-sm font-semibold text-[#691f1f]">
+                                                {application.applicant_number}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
-
-                                    <div>
-                                        <p className="text-sm text-gray-500">
-                                            Full Name
-                                        </p>
-
-                                        <p className="mt-1 font-semibold text-gray-900">
-                                            {application.full_name}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-500">
-                                            Applicant Number
-                                        </p>
-
-                                        <p className="mt-1 font-semibold text-gray-900">
-                                            {application.applicant_number}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-500">
-                                            Email
-                                        </p>
-
-                                        <p className="mt-1 font-semibold text-gray-900">
-                                            {application.email}
-                                        </p>
-                                    </div>
 
                                     <div>
                                         <p className="text-sm text-gray-500">
@@ -526,27 +528,31 @@ export default function ApplicationDetails({
 
                                     <div>
                                         <p className="text-sm text-gray-500">
-                                            Individual Income
+                                            Individual Gross Monthly Income
                                         </p>
 
                                         <p className="mt-1 font-semibold text-gray-900">
-                                            ₱
-                                            {Number(
-                                                application.individual_income || 0
-                                            ).toLocaleString()}
+                                            {application.individual_income_range || 'Not provided'}
                                         </p>
                                     </div>
 
                                     <div>
                                         <p className="text-sm text-gray-500">
-                                            Family Income
+                                            Family Gross Monthly Income
                                         </p>
 
                                         <p className="mt-1 font-semibold text-gray-900">
-                                            ₱
-                                            {Number(
-                                                application.family_income || 0
-                                            ).toLocaleString()}
+                                            {application.family_income_range || 'Not provided'}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm text-gray-500">
+                                            Ethnic Affiliation
+                                        </p>
+
+                                        <p className="mt-1 font-semibold text-gray-900">
+                                            {application.ethnic_affiliation || 'Not provided'}
                                         </p>
                                     </div>
 

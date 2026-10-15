@@ -1,7 +1,7 @@
 import PortalLayout from '@/layouts/portal-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { AlertCircle, CalendarCheck, CalendarDays, CheckCircle2, Clock, GraduationCap, Mail, MapPin, Phone, Search, X, XCircle } from 'lucide-react';
+import { AlertCircle, CalendarCheck, CalendarDays, CheckCircle2, Clock, GraduationCap, ListChecks, Mail, MapPin, Phone, Search, X, XCircle } from 'lucide-react';
 
 export default function Interviewees({
     interviewees = [],
@@ -15,12 +15,14 @@ export default function Interviewees({
     const [resultFilter, setResultFilter] = useState('All');
     const [passTarget, setPassTarget] = useState(null);
     const [failTarget, setFailTarget] = useState(null);
+    const [waitlistTarget, setWaitlistTarget] = useState(null);
 
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
 
     const passForm = useForm({});
     const failForm = useForm({});
+    const waitlistForm = useForm({});
 
     const academicYears = useMemo(() => {
         return [...new Set(
@@ -114,6 +116,9 @@ export default function Interviewees({
     const failedCount = interviewees.filter(
         (interviewee) => interviewee.interview_result === 'Failed'
     ).length;
+    const waitlistedCount = interviewees.filter(
+        (interviewee) => interviewee.interview_result === 'Waitlisted'
+    ).length;
 
     const openPassModal = (interviewee) => {
         passForm.reset();
@@ -125,6 +130,11 @@ export default function Interviewees({
         failForm.reset();
         failForm.clearErrors();
         setFailTarget(interviewee);
+    };
+
+    const openWaitlistModal = (interviewee) => {
+        waitlistForm.clearErrors();
+        setWaitlistTarget(interviewee);
     };
 
     const submitPassed = (event) => {
@@ -160,6 +170,23 @@ export default function Interviewees({
                 onSuccess: () => {
                     setFailTarget(null);
                     failForm.reset();
+                },
+            }
+        );
+    };
+
+    const submitWaitlisted = (event) => {
+        event.preventDefault();
+
+        if (!waitlistTarget) return;
+
+        waitlistForm.post(
+            `/admin/interviewees/${waitlistTarget.application_id}/waitlist`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setWaitlistTarget(null);
+                    waitlistForm.reset();
                 },
             }
         );
@@ -240,7 +267,7 @@ export default function Interviewees({
                             </div>
                         )}
 
-                        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                             <SummaryCard
                                 label="Total Interviewees"
                                 value={totalInterviewees}
@@ -264,6 +291,12 @@ export default function Interviewees({
                                 value={failedCount}
                                 icon={XCircle}
                                 type="danger"
+                            />
+                            <SummaryCard
+                                label="Waitlisted"
+                                value={waitlistedCount}
+                                icon={ListChecks}
+                                type="waitlist"
                             />
                         </div>
 
@@ -311,7 +344,7 @@ export default function Interviewees({
                                     value={resultFilter}
                                     onChange={setResultFilter}
                                     allLabel="All Results"
-                                    options={['Pending', 'Passed', 'Failed']}
+                                    options={['Pending', 'Passed', 'Failed', 'Waitlisted']}
                                 />
                             </div>
 
@@ -425,6 +458,7 @@ export default function Interviewees({
                                                             finished={interviewFinished(interviewee)}
                                                             onPass={() => openPassModal(interviewee)}
                                                             onFail={() => openFailModal(interviewee)}
+                                                            onWaitlist={() => openWaitlistModal(interviewee)}
                                                         />
                                                     </td>
                                                 </tr>
@@ -512,6 +546,7 @@ export default function Interviewees({
                                                 finished={interviewFinished(interviewee)}
                                                 onPass={() => openPassModal(interviewee)}
                                                 onFail={() => openFailModal(interviewee)}
+                                                onWaitlist={() => openWaitlistModal(interviewee)}
                                             />
                                         </div>
                                     </div>
@@ -614,6 +649,39 @@ export default function Interviewees({
                     </form>
                 </Modal>
             )}
+
+            {waitlistTarget && (
+                <Modal
+                    title="Add Applicant to Waitlist"
+                    onClose={() => setWaitlistTarget(null)}
+                >
+                    <form onSubmit={submitWaitlisted} className="space-y-5">
+                        <IntervieweeModalHeader interviewee={waitlistTarget} />
+                        <InterviewSummary interviewee={waitlistTarget} />
+
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                            This applicant will appear on the Waitlisted page and may still receive a final Passed or Failed decision later.
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setWaitlistTarget(null)}
+                                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={waitlistForm.processing}
+                                className="rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
+                            >
+                                {waitlistForm.processing ? 'Saving...' : 'Confirm Waitlist'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
         </>
     );
 }
@@ -680,6 +748,13 @@ function SummaryCard({
         styles = {
             backgroundColor: '#fee2e2',
             color: '#b91c1c',
+        };
+    }
+
+    if (type === 'waitlist') {
+        styles = {
+            backgroundColor: '#fef3c7',
+            color: '#b45309',
         };
     }
 
@@ -780,6 +855,11 @@ function InterviewResultBadge({ result }) {
         className = 'bg-red-100 text-red-700';
     }
 
+
+    if (result === 'Waitlisted') {
+        className = 'bg-amber-100 text-amber-800';
+    }
+
     return (
         <span
             className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${className}`}
@@ -794,18 +874,9 @@ function InterviewActions({
     finished,
     onPass,
     onFail,
+    onWaitlist,
 }) {
     const result = interviewee.interview_result ?? 'Pending';
-
-    if (result !== 'Pending') {
-        return (
-            <div className="text-center">
-                <p className="text-xs font-medium text-gray-500">
-                    Interview result recorded.
-                </p>
-            </div>
-        );
-    }
 
     if (!finished) {
         return (
@@ -818,11 +889,12 @@ function InterviewActions({
     }
 
     return (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="mx-auto flex w-full max-w-36 flex-col gap-2">
             <button
                 type="button"
                 onClick={onPass}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+                disabled={result === 'Passed'}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-45"
             >
                 <CheckCircle2 size={15} />
                 Passed
@@ -830,8 +902,19 @@ function InterviewActions({
 
             <button
                 type="button"
+                onClick={onWaitlist}
+                disabled={result === 'Waitlisted'}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+                <ListChecks size={15} />
+                Waitlist
+            </button>
+
+            <button
+                type="button"
                 onClick={onFail}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
+                disabled={result === 'Failed'}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-45"
             >
                 <XCircle size={15} />
                 Failed

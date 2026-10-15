@@ -7,6 +7,7 @@ import {
     Users,
     UserCheck,
     Award,
+    ListChecks,
     UserRound,
     GraduationCap,
     ClipboardList,
@@ -31,6 +32,7 @@ const adminNavigation = [
     ['/admin/examination-schedules', 'Exam schedules', CalendarDays],
     ['/admin/examinees', 'Examinees', Users],
     ['/admin/interviewees', 'Interviewees', UserCheck],
+    ['/admin/waitlisted', 'Waitlisted', ListChecks],
     ['/admin/final-list', 'Final list', Award],
 ];
 

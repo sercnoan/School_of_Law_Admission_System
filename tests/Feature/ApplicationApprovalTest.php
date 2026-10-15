@@ -19,13 +19,13 @@ beforeEach(function () {
         'civil_status' => 'Single',
     ]);
     DB::table('applications')->insert([
-        'application_id' => 1, 'applicant_profile_id' => 1, 'program' => 'Juris Doctor',
+        'application_id' => 1, 'applicant_profile_id' => 1, 'program' => 'Juris Doctor [Thesis] (JD)',
         'application_status' => 'Under Review', 'remarks' => 'Original remarks',
     ]);
     DB::table('requirements')->insert([
         ['requirement_id' => 1, 'requirement_name' => 'Common document', 'program' => 'Both', 'is_required' => 1],
-        ['requirement_id' => 2, 'requirement_name' => 'Law document', 'program' => 'Juris Doctor', 'is_required' => 1],
-        ['requirement_id' => 3, 'requirement_name' => 'Other program document', 'program' => 'Master of Legal Studies', 'is_required' => 1],
+        ['requirement_id' => 2, 'requirement_name' => 'Law document', 'program' => 'Juris Doctor [Thesis] (JD)', 'is_required' => 1],
+        ['requirement_id' => 3, 'requirement_name' => 'Other program document', 'program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)', 'is_required' => 1],
         ['requirement_id' => 4, 'requirement_name' => 'Optional document', 'program' => 'Both', 'is_required' => 0],
     ]);
 });
@@ -84,14 +84,14 @@ it('locks applicant mutations after approval or completion', function ($status) 
     $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
     $this->actingAs($applicant);
     Illuminate\Support\Facades\Storage::fake('public');
-    $this->post('/applicant/program', ['program' => 'Master of Legal Studies'])
+    $this->post('/applicant/program', ['program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)'])
         ->assertSessionHasErrors('program');
     $this->post('/applicant/requirements/1/upload', [
         'file' => Illuminate\Http\UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
     ])->assertSessionHasErrors('file');
     $this->post('/applicant/requirements/submit')->assertSessionHasErrors('application');
     $this->assertDatabaseHas('applications', [
-        'application_id' => 1, 'application_status' => $status, 'program' => 'Juris Doctor',
+        'application_id' => 1, 'application_status' => $status, 'program' => 'Juris Doctor [Thesis] (JD)',
     ]);
     $this->assertDatabaseCount('requirement_submissions', 0);
     expect(Illuminate\Support\Facades\Storage::disk('public')->allFiles())->toBe([]);
@@ -103,13 +103,92 @@ it('lets staff reopen an unbooked application for applicant corrections', functi
         ->assertSessionHasNoErrors();
     $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
     $this->actingAs($applicant);
-    $this->post('/applicant/program', ['program' => 'Master of Legal Studies'])->assertSessionHasNoErrors();
+    $this->post('/applicant/program', ['program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)'])->assertSessionHasNoErrors();
     Illuminate\Support\Facades\Storage::fake('public');
     $this->post('/applicant/requirements/1/upload', [
         'file' => Illuminate\Http\UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
     ])->assertSessionHasNoErrors();
-    $this->assertDatabaseHas('applications', ['application_id' => 1, 'application_status' => 'Under Review', 'program' => 'Master of Legal Studies']);
+    $this->assertDatabaseHas('applications', ['application_id' => 1, 'application_status' => 'Under Review', 'program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)']);
     $this->assertDatabaseHas('requirement_submissions', ['application_id' => 1, 'requirement_id' => 1, 'verification_status' => 'Pending']);
+});
+
+it('lets an applicant remove a submitted document and upload a replacement', function () {
+    Illuminate\Support\Facades\Storage::fake('public');
+    Illuminate\Support\Facades\Storage::disk('public')->put('requirements/1/original.pdf', 'original');
+    approvalTestDocument(1, 'Approved');
+    DB::table('requirement_submissions')->where('application_id', 1)->where('requirement_id', 1)->update([
+        'file_path' => 'requirements/1/original.pdf',
+    ]);
+
+    $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
+    $this->actingAs($applicant);
+
+    $this->post('/applicant/requirements/1/upload', [
+        'file' => Illuminate\Http\UploadedFile::fake()->create('another.pdf', 20, 'application/pdf'),
+    ])->assertSessionHasErrors('file');
+    $this->assertDatabaseHas('requirement_submissions', [
+        'application_id' => 1,
+        'requirement_id' => 1,
+        'file_path' => 'requirements/1/original.pdf',
+    ]);
+
+    $this->delete('/applicant/requirements/1')
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/applicant/requirements');
+
+    $this->assertDatabaseMissing('requirement_submissions', [
+        'application_id' => 1,
+        'requirement_id' => 1,
+    ]);
+    Illuminate\Support\Facades\Storage::disk('public')->assertMissing('requirements/1/original.pdf');
+
+    $this->post('/applicant/requirements/1/upload', [
+        'file' => Illuminate\Http\UploadedFile::fake()->create('replacement.pdf', 20, 'application/pdf'),
+    ])->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('requirement_submissions', [
+        'application_id' => 1,
+        'requirement_id' => 1,
+        'file_name' => 'replacement.pdf',
+        'verification_status' => 'Pending',
+    ]);
+});
+
+it('accepts only PDF requirement documents', function () {
+    Illuminate\Support\Facades\Storage::fake('public');
+    $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
+    $this->actingAs($applicant);
+
+    $this->post('/applicant/requirements/1/upload', [
+        'file' => Illuminate\Http\UploadedFile::fake()->create('document.jpg', 20, 'image/jpeg'),
+    ])->assertSessionHasErrors('file');
+
+    $this->assertDatabaseMissing('requirement_submissions', [
+        'application_id' => 1,
+        'requirement_id' => 1,
+    ]);
+    expect(Illuminate\Support\Facades\Storage::disk('public')->allFiles())->toBe([]);
+});
+
+it('does not let an applicant remove a document from a locked application', function () {
+    Illuminate\Support\Facades\Storage::fake('public');
+    Illuminate\Support\Facades\Storage::disk('public')->put('requirements/1/approved.pdf', 'approved');
+    approvalTestDocument(1, 'Approved');
+    DB::table('requirement_submissions')->where('application_id', 1)->where('requirement_id', 1)->update([
+        'file_path' => 'requirements/1/approved.pdf',
+    ]);
+    DB::table('applications')->where('application_id', 1)->update(['application_status' => 'Approved']);
+
+    $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
+    $this->actingAs($applicant);
+
+    $this->delete('/applicant/requirements/1')->assertSessionHasErrors('file');
+
+    $this->assertDatabaseHas('requirement_submissions', [
+        'application_id' => 1,
+        'requirement_id' => 1,
+    ]);
+    Illuminate\Support\Facades\Storage::disk('public')->assertExists('requirements/1/approved.pdf');
 });
 
 it('blocks reopening booked applications through any editable status', function ($status) {
@@ -131,6 +210,6 @@ it('protects an existing booking even if a legacy application is under review', 
     ]);
     DB::table('applications')->where('application_id', 1)->update(['schedule_id' => 1]);
     $this->actingAs(User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id')));
-    $this->post('/applicant/program', ['program' => 'Master of Legal Studies'])->assertSessionHasErrors('program');
+    $this->post('/applicant/program', ['program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)'])->assertSessionHasErrors('program');
     $this->post('/applicant/requirements/submit')->assertSessionHasErrors('application');
 });

@@ -1,7 +1,32 @@
 import PortalLayout from '@/layouts/portal-layout';
 import { Head, useForm } from '@inertiajs/react';
 
-import { AlertCircle, BadgeCheck, CalendarDays, ClipboardList, FileText, GraduationCap, LayoutDashboard, User, WalletCards } from 'lucide-react';
+import { AlertCircle, BadgeCheck, CalendarDays, Camera, CheckCircle2, ClipboardList, FileText, GraduationCap, ImagePlus, LayoutDashboard, Pencil, User, WalletCards, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+const ethnicAffiliations = [
+    'Bisaya/Cebuano',
+    'Tagalog',
+    'Ilocano',
+    'Hiligaynon/Ilonggo',
+    'Waray',
+    'Bicolano',
+    'Kapampangan',
+    'Pangasinense',
+    'Moro',
+    'Indigenous Peoples Group',
+    'Prefer not to say',
+];
+
+const monthlyIncomeRanges = [
+    'Below ₱10,000.00',
+    '₱10,001.00 – ₱20,000.00',
+    '₱20,001.00 – ₱30,000.00',
+    '₱30,001.00 – ₱40,000.00',
+    '₱40,001.00 – ₱50,000.00',
+    '₱50,001.00 – ₱100,000.00',
+    'Above ₱100,000.00',
+];
 
 export default function PersonalDetails({
     profile = null,
@@ -14,49 +39,186 @@ export default function PersonalDetails({
     const inputClass =
         'w-full rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3.5 text-sm font-medium text-gray-900 outline-none transition placeholder:font-normal placeholder:text-gray-400 hover:border-gray-300 focus:border-[#922b2b] focus:bg-white focus:ring-4 focus:ring-[#922b2b]/10';
 
+    const storedGender = profile?.gender || '';
+    const standardGender = ['Male', 'Female'].includes(
+        storedGender
+    );
+    const storedEthnicAffiliation =
+        profile?.ethnic_affiliation || '';
+    const standardEthnicAffiliation =
+        ethnicAffiliations.includes(storedEthnicAffiliation);
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [showReview, setShowReview] = useState(false);
+
     const {
         data,
         setData,
         post,
         processing,
         errors,
+        setError,
+        clearErrors,
+        reset,
     } = useForm({
-        full_name: '',
-        school_graduated: '',
-        employment_status: '',
-        present_address: '',
-        age: '',
-        gender: '',
-        gender_other: '',
-        contact_number: '',
-        religion: '',
-        civil_status: '',
-        individual_income: '',
-        family_income: '',
-        is_indigenous: '',
-        indigenous_community: '',
-        is_pwd: '',
-        pwd_type: '',
+        photo: null,
+        full_name: profile?.full_name || '',
+        school_graduated: profile?.school_graduated || '',
+        employment_status: profile?.employment_status || '',
+        present_address: profile?.present_address || '',
+        age: profile?.age ?? '',
+        gender: profile
+            ? standardGender
+                ? storedGender
+                : 'Other'
+            : '',
+        gender_other:
+            profile && !standardGender ? storedGender : '',
+        contact_number: profile?.contact_number || '',
+        religion: profile?.religion || '',
+        civil_status: profile?.civil_status || '',
+        individual_income: profile?.individual_income ?? '',
+        individual_income_range: profile?.individual_income_range || '',
+        family_income: profile?.family_income ?? '',
+        family_income_range: profile?.family_income_range || '',
+        ethnic_affiliation: profile
+            ? standardEthnicAffiliation
+                ? storedEthnicAffiliation
+                : storedEthnicAffiliation
+                  ? 'Other'
+                  : ''
+            : '',
+        ethnic_affiliation_other:
+            profile &&
+            storedEthnicAffiliation &&
+            !standardEthnicAffiliation
+                ? storedEthnicAffiliation
+                : '',
+        is_indigenous:
+            profile?.is_indigenous === null ||
+            profile?.is_indigenous === undefined
+                ? ''
+                : String(Number(profile.is_indigenous)),
+        indigenous_community:
+            profile?.indigenous_community || '',
+        is_pwd:
+            profile?.is_pwd === null ||
+            profile?.is_pwd === undefined
+                ? ''
+                : String(Number(profile.is_pwd)),
+        pwd_type: profile?.pwd_type || '',
     });
+
+    const selectedPhotoPreview = useMemo(
+        () =>
+            typeof File !== 'undefined' && data.photo instanceof File
+                ? URL.createObjectURL(data.photo)
+                : null,
+        [data.photo]
+    );
+
+    useEffect(
+        () => () => {
+            if (selectedPhotoPreview) {
+                URL.revokeObjectURL(selectedPhotoPreview);
+            }
+        },
+        [selectedPhotoPreview]
+    );
+
+    const savedPhotoUrl = profile?.photo_path
+        ? `/storage/${profile.photo_path}`
+        : null;
+    const photoPreview = selectedPhotoPreview || savedPhotoUrl;
 
     const submit = (event) => {
         event.preventDefault();
-        post('/personal-details');
-    };
 
-    const formatCurrency = (value) => {
-        if (
-            value === null ||
-            value === undefined ||
-            value === ''
-        ) {
-            return 'Not provided';
+        clearErrors();
+
+        const requiredFields = {
+            full_name: 'Enter your full name.',
+            school_graduated: 'Enter the school you graduated from.',
+            employment_status: 'Select your employment status.',
+            present_address: 'Enter your present address.',
+            age: 'Enter your age.',
+            gender: 'Select your gender.',
+            contact_number: 'Enter your contact number.',
+            religion: 'Enter your religion.',
+            civil_status: 'Select your civil status.',
+            individual_income_range: 'Select your individual gross monthly income range.',
+            family_income_range: 'Select your family gross monthly income range.',
+            ethnic_affiliation: 'Select your ethnic affiliation.',
+            is_indigenous: 'Select Yes or No.',
+            is_pwd: 'Select Yes or No.',
+        };
+
+        const missing = Object.fromEntries(
+            Object.entries(requiredFields).filter(
+                ([field]) =>
+                    data[field] === '' ||
+                    data[field] === null ||
+                    data[field] === undefined
+            )
+        );
+
+        if (!photoPreview) {
+            missing.photo = 'Upload your applicant photo.';
         }
 
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-        }).format(Number(value));
+        if (
+            data.gender === 'Other' &&
+            !data.gender_other.trim()
+        ) {
+            missing.gender_other =
+                'Describe your gender.';
+        }
+
+        if (
+            data.ethnic_affiliation === 'Other' &&
+            !data.ethnic_affiliation_other.trim()
+        ) {
+            missing.ethnic_affiliation_other =
+                'Enter your ethnic affiliation.';
+        }
+
+        if (Object.keys(missing).length > 0) {
+            setError(missing);
+            return;
+        }
+
+        setShowReview(true);
+    };
+
+    const confirmSubmission = () => {
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowReview(false);
+                setIsEditing(false);
+            },
+            onError: () => setShowReview(false),
+        };
+
+        if (profile) {
+            post('/personal-details/update', {
+                ...options,
+                forceFormData: true,
+            });
+            return;
+        }
+
+        post('/personal-details', {
+            ...options,
+            forceFormData: true,
+        });
+    };
+
+    const cancelEditing = () => {
+        reset();
+        clearErrors();
+        setShowReview(false);
+        setIsEditing(false);
     };
 
     const yesNo = (value) =>
@@ -134,15 +296,15 @@ export default function PersonalDetails({
                                 </p>
                             </div>
 
-                            {profile ? (
+                            {profile && !isEditing ? (
                                 <SavedProfile
                                     profile={profile}
                                     email={email}
                                     maroon={maroon}
-                                    formatCurrency={
-                                        formatCurrency
-                                    }
                                     yesNo={yesNo}
+                                    onEdit={() =>
+                                        setIsEditing(true)
+                                    }
                                 />
                             ) : (
                                 <form
@@ -154,11 +316,13 @@ export default function PersonalDetails({
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                             <div>
                                                 <h2 className="text-xl font-bold text-gray-900">
-                                                    Personal Details
+                                                    {profile
+                                                        ? 'Edit Personal Details'
+                                                        : 'Personal Details'}
                                                 </h2>
 
                                                 <p className="mt-1.5 max-w-2xl text-sm leading-6 text-gray-500">
-                                                    Enter your information carefully. Fields marked
+                                                    Enter your information carefully. You will review it before saving. Fields marked
                                                     with <span className="font-semibold text-red-500">*</span>{' '}
                                                     are required.
                                                 </p>
@@ -194,6 +358,56 @@ export default function PersonalDetails({
                                     {/* FORM BODY */}
                                     <div className="p-5 sm:p-7">
                                         <div className="grid grid-cols-1 gap-x-5 gap-y-5 md:grid-cols-12">
+
+                                            {/* APPLICANT PHOTO */}
+                                            <div className="md:col-span-12">
+                                                <CleanField
+                                                    label="Applicant Photo"
+                                                    error={errors.photo}
+                                                    required
+                                                >
+                                                    <div className={`flex flex-col gap-5 rounded-2xl border p-4 sm:flex-row sm:items-center ${errors.photo ? 'border-red-300 bg-red-50/50' : 'border-gray-200 bg-gray-50/70'}`}>
+                                                        <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-400">
+                                                            {photoPreview ? (
+                                                                <img
+                                                                    src={photoPreview}
+                                                                    alt="Applicant photo preview"
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <Camera size={36} />
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-semibold text-gray-900">
+                                                                {profile?.photo_path
+                                                                    ? 'Choose a new photo only if you want to replace the current one.'
+                                                                    : 'Upload a clear, recent photo of yourself.'}
+                                                            </p>
+                                                            <p className="mt-1 text-xs leading-5 text-gray-500">
+                                                                JPG, PNG, or WebP. Maximum file size: 10 MB.
+                                                            </p>
+
+                                                            <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#d9b8b8] bg-white px-4 py-2.5 text-sm font-bold text-[#691f1f] transition hover:bg-[#fffafa]">
+                                                                <ImagePlus size={17} />
+                                                                {photoPreview ? 'Change Photo' : 'Choose Photo'}
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/jpeg,image/png,image/webp"
+                                                                    className="sr-only"
+                                                                    onChange={(event) =>
+                                                                        setData(
+                                                                            'photo',
+                                                                            event.target.files?.[0] || null
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </CleanField>
+                                            </div>
 
                                             {/* FULL NAME */}
                                             <div className="md:col-span-12">
@@ -276,8 +490,8 @@ export default function PersonalDetails({
                                                         <option value="Self-Employed">
                                                             Self-Employed
                                                         </option>
-                                                        <option value="Unemployed">
-                                                            Unemployed
+                                                        <option value="Not Currently Employed">
+                                                            Not Currently Employed
                                                         </option>
                                                     </select>
                                                 </CleanField>
@@ -522,77 +736,166 @@ export default function PersonalDetails({
                                             {/* INDIVIDUAL INCOME */}
                                             <div className="md:col-span-6">
                                                 <CleanField
-                                                    label="Individual Income"
+                                                    label="Individual Gross Monthly Income"
                                                     error={
-                                                        errors.individual_income
+                                                        errors.individual_income_range
                                                     }
                                                     required
                                                 >
-                                                    <div className="relative">
-                                                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-sm font-semibold text-gray-500">
-                                                            ₱
-                                                        </span>
-
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="0.01"
-                                                            value={
-                                                                data.individual_income
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'individual_income',
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className={`${inputClass} pl-9`}
-                                                            placeholder="0.00"
-                                                        />
-                                                    </div>
+                                                    <select
+                                                        value={
+                                                            data.individual_income_range
+                                                        }
+                                                        onChange={(event) =>
+                                                            setData(
+                                                                'individual_income_range',
+                                                                event.target.value
+                                                            )
+                                                        }
+                                                        className={inputClass}
+                                                    >
+                                                        <option value="">
+                                                            Select an income range
+                                                        </option>
+                                                        {monthlyIncomeRanges.map(
+                                                            (range) => (
+                                                                <option
+                                                                    key={range}
+                                                                    value={range}
+                                                                >
+                                                                    {range}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
                                                 </CleanField>
 
                                                 <p className="mt-1.5 text-xs text-gray-400">
-                                                    Enter 0 if you currently have no income.
+                                                    Select the range for your personal monthly income.
                                                 </p>
                                             </div>
 
                                             {/* FAMILY INCOME */}
                                             <div className="md:col-span-6">
                                                 <CleanField
-                                                    label="Family Income"
+                                                    label="Family Gross Monthly Income"
                                                     error={
-                                                        errors.family_income
+                                                        errors.family_income_range
                                                     }
                                                     required
                                                 >
-                                                    <div className="relative">
-                                                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-sm font-semibold text-gray-500">
-                                                            ₱
-                                                        </span>
-
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="0.01"
-                                                            value={
-                                                                data.family_income
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'family_income',
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            className={`${inputClass} pl-9`}
-                                                            placeholder="0.00"
-                                                        />
-                                                    </div>
+                                                    <select
+                                                        value={
+                                                            data.family_income_range
+                                                        }
+                                                        onChange={(event) =>
+                                                            setData(
+                                                                'family_income_range',
+                                                                event.target.value
+                                                            )
+                                                        }
+                                                        className={inputClass}
+                                                    >
+                                                        <option value="">
+                                                            Select an income range
+                                                        </option>
+                                                        {monthlyIncomeRanges.map(
+                                                            (range) => (
+                                                                <option
+                                                                    key={range}
+                                                                    value={range}
+                                                                >
+                                                                    {range}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
                                                 </CleanField>
 
                                                 <p className="mt-1.5 text-xs text-gray-400">
-                                                    Enter the combined household or family income.
+                                                    Select the combined monthly income of your household or family.
                                                 </p>
+                                            </div>
+
+                                            {/* ETHNIC AFFILIATION */}
+                                            <div className="md:col-span-12">
+                                                <CleanField
+                                                    label="Ethnic Affiliation"
+                                                    error={
+                                                        errors.ethnic_affiliation
+                                                    }
+                                                    required
+                                                >
+                                                    <div className="space-y-3">
+                                                        <select
+                                                            value={
+                                                                data.ethnic_affiliation
+                                                            }
+                                                            onChange={(event) => {
+                                                                setData(
+                                                                    'ethnic_affiliation',
+                                                                    event.target.value
+                                                                );
+
+                                                                if (
+                                                                    event.target.value !==
+                                                                    'Other'
+                                                                ) {
+                                                                    setData(
+                                                                        'ethnic_affiliation_other',
+                                                                        ''
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className={inputClass}
+                                                        >
+                                                            <option value="">
+                                                                Select ethnic affiliation
+                                                            </option>
+                                                            {ethnicAffiliations.map(
+                                                                (affiliation) => (
+                                                                    <option
+                                                                        key={affiliation}
+                                                                        value={affiliation}
+                                                                    >
+                                                                        {affiliation}
+                                                                    </option>
+                                                                )
+                                                            )}
+                                                            <option value="Other">
+                                                                Other
+                                                            </option>
+                                                        </select>
+
+                                                        {data.ethnic_affiliation ===
+                                                            'Other' && (
+                                                            <div>
+                                                                <input
+                                                                    type="text"
+                                                                    value={
+                                                                        data.ethnic_affiliation_other
+                                                                    }
+                                                                    onChange={(event) =>
+                                                                        setData(
+                                                                            'ethnic_affiliation_other',
+                                                                            event.target.value
+                                                                        )
+                                                                    }
+                                                                    className={inputClass}
+                                                                    placeholder="Enter your ethnic affiliation"
+                                                                    maxLength={100}
+                                                                />
+
+                                                                {errors.ethnic_affiliation_other && (
+                                                                    <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-red-600">
+                                                                        <AlertCircle size={15} />
+                                                                        {errors.ethnic_affiliation_other}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CleanField>
                                             </div>
 
                                             {/* INDIGENOUS PEOPLES */}
@@ -711,27 +1014,51 @@ export default function PersonalDetails({
                                     <div className="border-t border-gray-100 bg-gray-50/70 px-5 py-5 sm:px-7">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <p className="max-w-2xl text-sm leading-6 text-gray-500">
-                                                Review your information before submitting. After
-                                                saving, this page will show your personal
-                                                information in read-only mode.
+                                                Your information will not be saved until you confirm it in the review window.
                                             </p>
 
-                                            <button
-                                                type="submit"
-                                                disabled={processing}
-                                                className="inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                                                style={{
-                                                    backgroundColor:
-                                                        maroon,
-                                                }}
-                                            >
-                                                {processing
-                                                    ? 'Saving...'
-                                                    : 'Save Personal Information'}
-                                            </button>
+                                            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                                                {profile && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={cancelEditing}
+                                                        disabled={processing}
+                                                        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    type="submit"
+                                                    disabled={processing}
+                                                    className="inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                                    style={{
+                                                        backgroundColor:
+                                                            maroon,
+                                                    }}
+                                                >
+                                                    Review Information
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </form>
+                            )}
+
+                            {showReview && (
+                                <PersonalInformationReview
+                                    data={data}
+                                    photoPreview={photoPreview}
+                                    email={email}
+                                    processing={processing}
+                                    isEditing={Boolean(profile)}
+                                    yesNo={yesNo}
+                                    onClose={() =>
+                                        setShowReview(false)
+                                    }
+                                    onConfirm={confirmSubmission}
+                                />
                             )}
 
                             <div className="mt-10 border-t border-gray-200 pt-5">
@@ -752,16 +1079,26 @@ function SavedProfile({
     profile,
     email,
     maroon,
-    formatCurrency,
     yesNo,
+    onEdit,
 }) {
     return (
         <div className="space-y-6">
             <div className="overflow-hidden rounded-2xl border border-green-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-4 border-b border-green-100 bg-green-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                     <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                            <BadgeCheck size={25} />
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-green-100 text-green-700 shadow-sm">
+                            {profile.photo_path ? (
+                                <img
+                                    src={`/storage/${profile.photo_path}`}
+                                    alt={`${profile.full_name} applicant photo`}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                    <BadgeCheck size={28} />
+                                </div>
+                            )}
                         </div>
 
                         <div>
@@ -773,21 +1110,27 @@ function SavedProfile({
                                 Personal Information Submitted
                             </h2>
 
-                            <p className="mt-1 text-sm leading-6 text-gray-600">
-                                These are the personal details
-                                currently saved for your
-                                admission application.
-                            </p>
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-green-200 bg-white px-4 py-3 sm:text-right">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                            Applicant Number
-                        </p>
-                        <p className="mt-1 text-lg font-bold text-green-700">
-                            {profile.applicant_number}
-                        </p>
+                    <div className="flex flex-col gap-3 sm:items-end">
+                        <div className="rounded-xl border border-green-200 bg-white px-4 py-3 sm:text-right">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                Applicant Number
+                            </p>
+                            <p className="mt-1 text-lg font-bold text-green-700">
+                                {profile.applicant_number}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onEdit}
+                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d9b8b8] bg-white px-4 py-2.5 text-sm font-bold text-[#691f1f] transition hover:bg-[#fffafa]"
+                        >
+                            <Pencil size={16} />
+                            Edit Information
+                        </button>
                     </div>
                 </div>
 
@@ -862,16 +1205,18 @@ function SavedProfile({
                     >
                         <ProfileGrid>
                             <ProfileValue
-                                label="Individual Income"
-                                value={formatCurrency(
-                                    profile.individual_income
-                                )}
+                                label="Individual Gross Monthly Income"
+                                value={
+                                    profile.individual_income_range ||
+                                    'Not provided'
+                                }
                             />
                             <ProfileValue
-                                label="Family Income"
-                                value={formatCurrency(
-                                    profile.family_income
-                                )}
+                                label="Family Gross Monthly Income"
+                                value={
+                                    profile.family_income_range ||
+                                    'Not provided'
+                                }
                             />
                         </ProfileGrid>
                     </ProfileSection>
@@ -884,6 +1229,13 @@ function SavedProfile({
                         maroon={maroon}
                     >
                         <ProfileGrid>
+                            <ProfileValue
+                                label="Ethnic Affiliation"
+                                value={
+                                    profile.ethnic_affiliation ||
+                                    'Not provided'
+                                }
+                            />
                             <ProfileValue
                                 label="Member of Indigenous Peoples Community"
                                 value={yesNo(
@@ -923,20 +1275,164 @@ function SavedProfile({
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-[#ead0d0] bg-[#f9eeee] p-5">
-                <p
-                    className="font-semibold"
-                    style={{ color: maroon }}
-                >
-                    Personal information is read-only
-                </p>
+        </div>
+    );
+}
 
-                <p className="mt-1 text-sm leading-6 text-gray-600">
-                    If any submitted information is
-                    incorrect, please contact the USeP
-                    School of Law admission office.
-                </p>
+function PersonalInformationReview({
+    data,
+    photoPreview,
+    email,
+    processing,
+    isEditing,
+    yesNo,
+    onClose,
+    onConfirm,
+}) {
+    const gender =
+        data.gender === 'Other'
+            ? data.gender_other
+            : data.gender;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="personal-information-review-title"
+        >
+            <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-5 sm:px-7">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#922b2b]">
+                            REVIEW BEFORE SAVING
+                        </p>
+                        <h2
+                            id="personal-information-review-title"
+                            className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl"
+                        >
+                            Confirm Your Personal Information
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-gray-500">
+                            Check every detail carefully. Choose Back to Edit if something needs correction.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={processing}
+                        aria-label="Close review"
+                        className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                    >
+                        <X size={21} />
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+                    <div className="mb-5 flex flex-col items-center gap-3 text-center">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            Applicant Photo
+                        </p>
+                        <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+                            {photoPreview ? (
+                                <img
+                                    src={photoPreview}
+                                    alt="Applicant photo for review"
+                                    className="h-full w-full rounded-lg object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                    <Camera size={30} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <ReviewValue label="Full Name" value={data.full_name} wide />
+                        <ReviewValue label="Email Address" value={email} />
+                        <ReviewValue label="Contact Number" value={data.contact_number} />
+                        <ReviewValue label="School Graduated" value={data.school_graduated} />
+                        <ReviewValue label="Employment Status" value={data.employment_status} />
+                        <ReviewValue label="Age" value={data.age} />
+                        <ReviewValue label="Gender" value={gender} />
+                        <ReviewValue label="Religion" value={data.religion} />
+                        <ReviewValue label="Civil Status" value={data.civil_status} />
+                        <ReviewValue label="Present Address" value={data.present_address} wide />
+                        <ReviewValue
+                            label="Individual Gross Monthly Income"
+                            value={data.individual_income_range}
+                        />
+                        <ReviewValue
+                            label="Family Gross Monthly Income"
+                            value={data.family_income_range}
+                        />
+                        <ReviewValue
+                            label="Ethnic Affiliation"
+                            value={
+                                data.ethnic_affiliation === 'Other'
+                                    ? data.ethnic_affiliation_other
+                                    : data.ethnic_affiliation
+                            }
+                        />
+                        <ReviewValue label="Indigenous Peoples Community Member" value={yesNo(data.is_indigenous)} />
+                        <ReviewValue
+                            label="Indigenous Peoples Community"
+                            value={data.is_indigenous === '1' ? data.indigenous_community || 'Not specified' : 'Not applicable'}
+                        />
+                        <ReviewValue label="Person with Disability" value={yesNo(data.is_pwd)} />
+                        <ReviewValue
+                            label="Type of Disability"
+                            value={data.is_pwd === '1' ? data.pwd_type || 'Not specified' : 'Not applicable'}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={processing}
+                        className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Back to Edit
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={processing}
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#922b2b] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#691f1f] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <CheckCircle2 size={18} />
+                        {processing
+                            ? 'Saving...'
+                            : isEditing
+                              ? 'Confirm Changes'
+                              : 'Confirm and Submit'}
+                    </button>
+                </div>
             </div>
+        </div>
+    );
+}
+
+function ReviewValue({ label, value, wide = false }) {
+    return (
+        <div
+            className={`rounded-xl border border-gray-200 bg-gray-50 p-4 ${
+                wide ? 'sm:col-span-2 lg:col-span-3' : ''
+            }`}
+        >
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {label}
+            </p>
+            <p className="mt-1 break-words font-semibold text-gray-900">
+                {value === '' || value === null || value === undefined
+                    ? 'Not provided'
+                    : value}
+            </p>
         </div>
     );
 }

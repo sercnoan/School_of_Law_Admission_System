@@ -27,6 +27,9 @@ createInertiaApp({
             case name.startsWith('Applicant/'):
                 return null;
 
+            case name.startsWith('Interviewer/'):
+                return null;
+
             default:
                 return AppLayout;
         }

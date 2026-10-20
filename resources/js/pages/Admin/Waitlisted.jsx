@@ -1,4 +1,5 @@
 import PortalLayout from '@/layouts/portal-layout';
+import RecordPagination, { useRecordPagination } from '@/components/record-pagination';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { AlertCircle, CalendarDays, CheckCircle2, Clock, GraduationCap, ListChecks, Mail, MapPin, Search } from 'lucide-react';
@@ -27,6 +28,8 @@ export default function Waitlisted({ waitlisted = [] }) {
             return matchesSearch && matchesProgram;
         });
     }, [waitlisted, search, program]);
+
+    const pagination = useRecordPagination(filtered, `${search}|${program}`);
 
     const addToFinalList = (item) => {
         const confirmed = window.confirm(
@@ -110,7 +113,7 @@ export default function Waitlisted({ waitlisted = [] }) {
                         </div>
 
                         <div className="space-y-4">
-                            {filtered.length ? filtered.map((item) => (
+                            {filtered.length ? pagination.pageRecords.map((item) => (
                                 <article key={item.application_id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
                                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="min-w-0">
@@ -162,7 +165,11 @@ export default function Waitlisted({ waitlisted = [] }) {
                             )}
                         </div>
 
-                        <p className="mt-4 text-sm text-gray-500">Showing <strong>{filtered.length}</strong> of <strong>{waitlisted.length}</strong> applicants</p>
+                        <RecordPagination
+                            {...pagination}
+                            totalRecords={filtered.length}
+                            onPageChange={pagination.setPage}
+                        />
                     </div>
                 </PortalLayout>
             </div>

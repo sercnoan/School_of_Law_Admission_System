@@ -1,4 +1,5 @@
 import PortalLayout from '@/layouts/portal-layout';
+import RecordPagination, { useRecordPagination } from '@/components/record-pagination';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { AlertCircle, CalendarCheck, CalendarDays, CheckCircle2, Clock, GraduationCap, ListChecks, Mail, MapPin, Phone, Search, X, XCircle } from 'lucide-react';
@@ -106,6 +107,10 @@ export default function Interviewees({
     ]);
 
     const totalInterviewees = interviewees.length;
+    const pagination = useRecordPagination(
+        filteredInterviewees,
+        `${search}|${academicYearFilter}|${programFilter}|${resultFilter}`
+    );
     const pendingCount = interviewees.filter(
         (interviewee) =>
             (interviewee.interview_result ?? 'Pending') === 'Pending'
@@ -380,7 +385,7 @@ export default function Interviewees({
 
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredInterviewees.length > 0 ? (
-                                            filteredInterviewees.map((interviewee) => (
+                                            pagination.pageRecords.map((interviewee) => (
                                                 <tr
                                                     key={interviewee.application_id}
                                                     className="align-top transition hover:bg-gray-50"
@@ -480,7 +485,7 @@ export default function Interviewees({
 
                         <div className="space-y-4 lg:hidden">
                             {filteredInterviewees.length > 0 ? (
-                                filteredInterviewees.map((interviewee) => (
+                                pagination.pageRecords.map((interviewee) => (
                                     <div
                                         key={interviewee.application_id}
                                         className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
@@ -558,10 +563,11 @@ export default function Interviewees({
                             )}
                         </div>
 
-                        <div className="mt-4 text-sm text-gray-500">
-                            Showing <strong>{filteredInterviewees.length}</strong> of{' '}
-                            <strong>{interviewees.length}</strong> interviewees
-                        </div>
+                        <RecordPagination
+                            {...pagination}
+                            totalRecords={filteredInterviewees.length}
+                            onPageChange={pagination.setPage}
+                        />
                     </div>
                 </PortalLayout>
             </div>

@@ -1,4 +1,5 @@
 import PortalLayout from '@/layouts/portal-layout';
+import RecordPagination, { useRecordPagination } from '@/components/record-pagination';
 import { Head, Link } from '@inertiajs/react';
 
 import { FileText, Users, Search, Eye, Filter, CalendarDays, GraduationCap, Mail, Hash } from 'lucide-react';
@@ -64,6 +65,11 @@ export default function Applications({
         statusFilter,
         programFilter,
     ]);
+
+    const pagination = useRecordPagination(
+        filteredApplications,
+        `${search}|${statusFilter}|${programFilter}`
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -598,7 +604,7 @@ export default function Applications({
                             {filteredApplications.length >
                             0 ? (
 
-                                filteredApplications.map(
+                                pagination.pageRecords.map(
                                     (
                                         application
                                     ) => {
@@ -943,7 +949,7 @@ export default function Applications({
                                         {filteredApplications.length >
                                         0 ? (
 
-                                            filteredApplications.map(
+                                            pagination.pageRecords.map(
                                                 (
                                                     application
                                                 ) => {
@@ -1245,39 +1251,13 @@ export default function Applications({
                             RESULT COUNT
                         ================================================= */}
 
-                        <div
-                            className="
-                                mt-4
-                                flex
-                                flex-col
-                                gap-2
-                                text-xs
-                                text-gray-500
-                                sm:flex-row
-                                sm:items-center
-                                sm:justify-between
-                            "
-                        >
+                        <RecordPagination
+                            {...pagination}
+                            totalRecords={filteredApplications.length}
+                            onPageChange={pagination.setPage}
+                        />
 
-                            <p>
-                                Showing{' '}
-
-                                <span className="font-semibold text-gray-700">
-                                    {
-                                        filteredApplications.length
-                                    }
-                                </span>{' '}
-
-                                of{' '}
-
-                                <span className="font-semibold text-gray-700">
-                                    {
-                                        applications.length
-                                    }
-                                </span>{' '}
-
-                                applications
-                            </p>
+                        <div className="mt-3 text-right text-xs text-gray-500">
 
 
                             {(search ||

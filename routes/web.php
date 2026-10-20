@@ -11,6 +11,7 @@ use App\Http\Controllers\ApplicantStatusController;
 use App\Http\Controllers\ExaminationScheduleController;
 use App\Http\Controllers\ExamineeController;
 use App\Http\Controllers\IntervieweeController;
+use App\Http\Controllers\InterviewerController;
 
 
 /*
@@ -55,6 +56,10 @@ Route::middleware([
                     );
             }
 
+            if (auth()->user()->role === 'interviewer') {
+                return redirect()->route('interviewer.interviewees');
+            }
+
             return redirect()
                 ->route(
                     'applicant.dashboard'
@@ -63,6 +68,19 @@ Route::middleware([
     )->name(
         'dashboard'
     );
+
+    Route::middleware('interviewer')
+        ->prefix('interviewer')
+        ->group(function () {
+            Route::get('/interviewees', [InterviewerController::class, 'index'])
+                ->name('interviewer.interviewees');
+            Route::get('/interviewees/{applicationId}', [InterviewerController::class, 'show'])
+                ->name('interviewer.interviewees.show');
+            Route::get('/requirements/{submissionId}/download', [InterviewerController::class, 'downloadRequirement'])
+                ->name('interviewer.requirement.download');
+            Route::get('/requirements/{submissionId}/view', [InterviewerController::class, 'viewRequirement'])
+                ->name('interviewer.requirement.view');
+        });
 
 
     /*

@@ -35,18 +35,32 @@ const adminNavigation = [
     ['/admin/waitlisted', 'Waitlisted', ListChecks],
     ['/admin/final-list', 'Final list', Award],
 ];
+const interviewerNavigation = [
+    ['/interviewer/interviewees', 'Interviewees', UserCheck],
+];
 
 export default function PortalLayout({ audience, children }) {
     const { url, props } = usePage();
     const isAdmin = audience === 'admin';
-    const navigation = isAdmin ? adminNavigation : applicantNavigation;
+    const isInterviewer = audience === 'interviewer';
+    const isApplicant = !isAdmin && !isInterviewer;
+    const navigation = isAdmin
+        ? adminNavigation
+        : isInterviewer
+          ? interviewerNavigation
+          : applicantNavigation;
     const path = url.split('?')[0];
     const active =
         navigation.find(
             ([href]) => path === href || path.startsWith(`${href}/`),
         ) || navigation[0];
     const name =
-        props.auth?.user?.name || (isAdmin ? 'Administrator' : 'Applicant');
+        props.auth?.user?.name ||
+        (isAdmin
+            ? 'Administrator'
+            : isInterviewer
+              ? 'Interviewer'
+              : 'Applicant');
     const [open, setOpen] = useState(false);
     const [privacyOpen, setPrivacyOpen] = useState(false);
     const closeButton = useRef(null);
@@ -59,7 +73,7 @@ export default function PortalLayout({ audience, children }) {
         setOpen(false);
     }, [url]);
     useEffect(() => {
-        if (isAdmin) return;
+        if (!isApplicant) return;
 
         try {
             setPrivacyOpen(
@@ -68,7 +82,7 @@ export default function PortalLayout({ audience, children }) {
         } catch {
             setPrivacyOpen(true);
         }
-    }, [isAdmin, privacyStorageKey]);
+    }, [isApplicant, privacyStorageKey]);
     useEffect(() => {
         const desktop = window.matchMedia('(min-width: 1024px)');
         const closeOnDesktop = () => {
@@ -129,7 +143,9 @@ export default function PortalLayout({ audience, children }) {
     };
 
     return (
-        <div className="law-portal">
+        <div
+            className={`law-portal ${isInterviewer ? 'interviewer-portal' : ''}`}
+        >
             <a className="portal-skip" href="#portal-main">
                 Skip to content
             </a>
@@ -170,10 +186,18 @@ export default function PortalLayout({ audience, children }) {
                 </button>
                 <div className="portal-workspace">
                     <span className="portal-dot" />
-                    {isAdmin ? 'Admissions administration' : 'Applicant portal'}
+                    {isAdmin
+                        ? 'Admissions administration'
+                        : isInterviewer
+                          ? 'Interview panel'
+                          : 'Applicant portal'}
                 </div>
                 <p className="portal-nav-label">
-                    {isAdmin ? 'Manage admissions' : 'Your application'}
+                    {isAdmin
+                        ? 'Manage admissions'
+                        : isInterviewer
+                          ? 'Review candidates'
+                          : 'Your application'}
                 </p>
                 <nav>
                     {navigation.map(([href, label, Icon]) => (
@@ -200,7 +224,11 @@ export default function PortalLayout({ audience, children }) {
                         <span>
                             <strong>{name}</strong>
                             <small>
-                                {isAdmin ? 'Administrator' : 'Applicant'}
+                                {isAdmin
+                                    ? 'Administrator'
+                                    : isInterviewer
+                                      ? 'Interviewer'
+                                      : 'Applicant'}
                             </small>
                         </span>
                     </div>
@@ -232,7 +260,11 @@ export default function PortalLayout({ audience, children }) {
                     </button>
                     <div className="portal-breadcrumb">
                         <span>
-                            {isAdmin ? 'Admissions' : 'Applicant portal'}
+                            {isAdmin
+                                ? 'Admissions'
+                                : isInterviewer
+                                  ? 'Interviewer portal'
+                                  : 'Applicant portal'}
                         </span>
                         <ChevronRight size={14} />
                         <strong>{active[1]}</strong>
@@ -247,7 +279,7 @@ export default function PortalLayout({ audience, children }) {
                 <footer className="portal-footer">
                     USeP School of Law
                     <span>
-                        {!isAdmin && (
+                        {isApplicant && (
                             <button
                                 type="button"
                                 onClick={() => setPrivacyOpen(true)}
@@ -259,7 +291,7 @@ export default function PortalLayout({ audience, children }) {
                     </span>
                 </footer>
             </div>
-            {!isAdmin && privacyOpen && (
+            {isApplicant && privacyOpen && (
                 <div className="privacy-notice-backdrop" role="presentation">
                     <section
                         className="privacy-notice"
@@ -280,27 +312,15 @@ export default function PortalLayout({ audience, children }) {
                             className="privacy-notice-body"
                         >
                             <p>
-                                The USeP School of Law Admission Management
-                                System collects the personal, contact, academic,
-                                demographic, and supporting-document information
-                                you provide during your application.
-                            </p>
-                            <p>
-                                Your information will be used to verify your
-                                eligibility, evaluate and process your
-                                application, schedule admission activities,
-                                communicate results, and maintain official
-                                admission records. Access is limited to
-                                authorized school personnel and service
-                                providers responsible for operating the system.
-                            </p>
-                            <p>
-                                Please provide accurate information and upload
-                                only documents required for admission. You may
-                                contact the School of Law or the University Data
-                                Protection Office to ask about the processing of
-                                your data or to request access or correction,
-                                subject to applicable school policies and law.
+                                In compliance with Republic Act No. 10173, also
+                                known as the Data Privacy Act of 2012, all
+                                personal information provided in this form will
+                                be treated with strict confidentiality and
+                                protection. By submitting this application, you
+                                authorize the University of Southeastern
+                                Philippines – School of Law (USeP-SoL) to
+                                collect, process, and store your information
+                                solely for administrative purposes.
                             </p>
                         </div>
                         <p className="privacy-notice-footnote">

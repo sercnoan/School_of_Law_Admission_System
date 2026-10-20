@@ -1,4 +1,5 @@
 import PortalLayout from '@/layouts/portal-layout';
+import RecordPagination, { useRecordPagination } from '@/components/record-pagination';
 import {
     Head,
     Link,
@@ -342,6 +343,11 @@ export default function ExaminationSchedules({
                 statusFilter,
             ]
         );
+
+    const pagination = useRecordPagination(
+        filteredSchedules,
+        `${search}|${statusFilter}`
+    );
 
 
     /*
@@ -1080,7 +1086,7 @@ export default function ExaminationSchedules({
 
                                 <div className="space-y-4">
 
-                                    {filteredSchedules.map(
+                                    {pagination.pageRecords.map(
                                         (
                                             schedule
                                         ) => {
@@ -2043,6 +2049,12 @@ export default function ExaminationSchedules({
                                 </div>
 
                             )}
+
+                            <RecordPagination
+                                {...pagination}
+                                totalRecords={filteredSchedules.length}
+                                onPageChange={pagination.setPage}
+                            />
 
 
                             {/* =================================================

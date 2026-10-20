@@ -1,4 +1,5 @@
 import PortalLayout from '@/layouts/portal-layout';
+import RecordPagination, { useRecordPagination } from '@/components/record-pagination';
 import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, Download, GraduationCap, Mail, Search } from 'lucide-react';
@@ -131,6 +132,11 @@ export default function FinalList({
             academicYearFilter,
             programFilter,
         ]);
+
+    const pagination = useRecordPagination(
+        filteredFinalists,
+        `${search}|${academicYearFilter}|${programFilter}`
+    );
 
 
     /*
@@ -640,7 +646,7 @@ export default function FinalList({
                                         {filteredFinalists.length >
                                         0 ? (
 
-                                            filteredFinalists.map(
+                                            pagination.pageRecords.map(
                                                 (
                                                     finalist
                                                 ) => (
@@ -865,7 +871,7 @@ export default function FinalList({
                             {filteredFinalists.length >
                             0 ? (
 
-                                filteredFinalists.map(
+                                pagination.pageRecords.map(
                                     (
                                         finalist
                                     ) => (
@@ -1038,29 +1044,11 @@ export default function FinalList({
                         </div>
 
 
-                        {/* COUNT */}
-
-                        <div className="mt-4 text-sm text-gray-500">
-
-                            Showing{' '}
-
-                            <strong>
-                                {
-                                    filteredFinalists.length
-                                }
-                            </strong>
-
-                            {' '}of{' '}
-
-                            <strong>
-                                {
-                                    finalists.length
-                                }
-                            </strong>
-
-                            {' '}qualified applicants
-
-                        </div>
+                        <RecordPagination
+                            {...pagination}
+                            totalRecords={filteredFinalists.length}
+                            onPageChange={pagination.setPage}
+                        />
 
                     </div>
 

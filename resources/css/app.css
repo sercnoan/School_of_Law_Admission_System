@@ -307,6 +307,13 @@
     margin-left: 264px;
     min-width: 0;
 }
+.interviewer-portal .portal-workarea {
+    position: fixed;
+    inset: 0 0 0 264px;
+    margin-left: 0;
+    overflow-y: auto;
+    background: #f7f7f9;
+}
 .portal-topbar {
     height: 72px;
     display: flex;
@@ -563,6 +570,9 @@
     }
     .portal-workarea {
         margin-left: 0;
+    }
+    .interviewer-portal .portal-workarea {
+        left: 0;
     }
     .portal-topbar {
         height: 62px;

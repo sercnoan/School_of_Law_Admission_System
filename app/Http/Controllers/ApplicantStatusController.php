@@ -66,20 +66,9 @@ class ApplicantStatusController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $requirements = Requirement::whereIn(
-            'program',
-            [
-                $application->program,
-                'Both',
-            ]
-        )
-            ->where(
-                'is_required',
-                true
-            )
-            ->orderBy(
-                'requirement_id'
-            )
+        $requirements = Requirement::where('program', $application->program)
+            ->where('is_active', true)
+            ->ordered()
             ->get();
 
         /*

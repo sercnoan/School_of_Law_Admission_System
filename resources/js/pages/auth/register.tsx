@@ -13,23 +13,16 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-
 type Props = {
     passwordRules: string;
 };
 
-
-export default function Register({
-    passwordRules,
-}: Props) {
-
+export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Create an Account" />
 
-
             <div className="min-h-screen bg-white">
-
                 {/* =====================================================
                     HEADER
                 ===================================================== */}
@@ -81,21 +74,17 @@ export default function Register({
                 ===================================================== */}
 
                 <div className="mx-auto flex min-h-[calc(100vh-160px)] w-full max-w-xl flex-col items-center justify-center px-6 py-10">
-
                     {/* =================================================
                         LOGO
                     ================================================= */}
 
                     <div className="mb-5 flex items-center justify-center">
-
                         <img
                             src="/images/law-logo.jpeg"
                             alt="University of Southeastern Philippines"
                             className="h-20 w-20 object-contain"
                         />
-
                     </div>
-
 
                     {/* =================================================
                         TITLE
@@ -105,11 +94,9 @@ export default function Register({
                         Create an account
                     </h1>
 
-
                     <p className="mb-8 text-center text-sm text-gray-500">
                         Register for the USeP School of Law Admission Portal
                     </p>
-
 
                     {/* =================================================
                         REGISTER FORM
@@ -117,34 +104,23 @@ export default function Register({
 
                     <Form
                         {...store.form()}
-                        resetOnSuccess={[
-                            'password',
-                            'password_confirmation',
-                        ]}
+                        resetOnSuccess={['password', 'password_confirmation']}
                         disableWhileProcessing
                         className="w-full max-w-md"
                     >
-
-                        {({
-                            processing,
-                            errors,
-                        }) => (
-
+                        {({ processing, errors }) => (
                             <div className="flex flex-col gap-5">
-
                                 {/* =================================================
                                     NAME
                                 ================================================= */}
 
                                 <div className="grid gap-2">
-
                                     <Label
                                         htmlFor="name"
                                         className="text-base font-normal text-black"
                                     >
                                         Full name
                                     </Label>
-
 
                                     <Input
                                         id="name"
@@ -155,44 +131,26 @@ export default function Register({
                                         autoComplete="name"
                                         name="name"
                                         placeholder="Enter your full name"
-                                        className="
-                                            h-14
-                                            rounded-xl
-                                            border
-                                            border-gray-300
-                                            bg-white
-                                            px-4
-                                            text-base
-                                            text-black
-                                            shadow-none
-                                            placeholder:text-gray-400
-                                            focus:border-[#8F2D2D]
-                                            focus:ring-[#8F2D2D]
-                                        "
+                                        className="h-14 rounded-xl border border-gray-300 bg-white px-4 text-base text-black shadow-none placeholder:text-gray-400 focus:border-[#8F2D2D] focus:ring-[#8F2D2D]"
                                     />
-
 
                                     <InputError
                                         message={errors.name}
                                         className="mt-1"
                                     />
-
                                 </div>
-
 
                                 {/* =================================================
                                     EMAIL
                                 ================================================= */}
 
                                 <div className="grid gap-2">
-
                                     <Label
                                         htmlFor="email"
                                         className="text-base font-normal text-black"
                                     >
                                         Email address
                                     </Label>
-
 
                                     <Input
                                         id="email"
@@ -202,43 +160,23 @@ export default function Register({
                                         autoComplete="email"
                                         name="email"
                                         placeholder="Enter your email address"
-                                        className="
-                                            h-14
-                                            rounded-xl
-                                            border
-                                            border-gray-300
-                                            bg-white
-                                            px-4
-                                            text-base
-                                            text-black
-                                            shadow-none
-                                            placeholder:text-gray-400
-                                            focus:border-[#8F2D2D]
-                                            focus:ring-[#8F2D2D]
-                                        "
+                                        className="h-14 rounded-xl border border-gray-300 bg-white px-4 text-base text-black shadow-none placeholder:text-gray-400 focus:border-[#8F2D2D] focus:ring-[#8F2D2D]"
                                     />
 
-
-                                    <InputError
-                                        message={errors.email}
-                                    />
-
+                                    <InputError message={errors.email} />
                                 </div>
-
 
                                 {/* =================================================
                                     PASSWORD
                                 ================================================= */}
 
                                 <div className="grid gap-2">
-
                                     <Label
                                         htmlFor="password"
                                         className="text-base font-normal text-black"
                                     >
                                         Password
                                     </Label>
-
 
                                     <PasswordInput
                                         id="password"
@@ -248,43 +186,23 @@ export default function Register({
                                         name="password"
                                         placeholder="Create a password"
                                         passwordrules={passwordRules}
-                                        className="
-                                            h-14
-                                            rounded-xl
-                                            border
-                                            border-gray-300
-                                            bg-white
-                                            px-4
-                                            text-base
-                                            text-black
-                                            shadow-none
-                                            placeholder:text-gray-400
-                                            focus:border-[#8F2D2D]
-                                            focus:ring-[#8F2D2D]
-                                        "
+                                        className="h-14 rounded-xl border border-gray-300 bg-white px-4 text-base text-black shadow-none placeholder:text-gray-400 focus:border-[#8F2D2D] focus:ring-[#8F2D2D]"
                                     />
 
-
-                                    <InputError
-                                        message={errors.password}
-                                    />
-
+                                    <InputError message={errors.password} />
                                 </div>
-
 
                                 {/* =================================================
                                     CONFIRM PASSWORD
                                 ================================================= */}
 
                                 <div className="grid gap-2">
-
                                     <Label
                                         htmlFor="password_confirmation"
                                         className="text-base font-normal text-black"
                                     >
                                         Confirm password
                                     </Label>
-
 
                                     <PasswordInput
                                         id="password_confirmation"
@@ -294,31 +212,13 @@ export default function Register({
                                         name="password_confirmation"
                                         placeholder="Confirm your password"
                                         passwordrules={passwordRules}
-                                        className="
-                                            h-14
-                                            rounded-xl
-                                            border
-                                            border-gray-300
-                                            bg-white
-                                            px-4
-                                            text-base
-                                            text-black
-                                            shadow-none
-                                            placeholder:text-gray-400
-                                            focus:border-[#8F2D2D]
-                                            focus:ring-[#8F2D2D]
-                                        "
+                                        className="h-14 rounded-xl border border-gray-300 bg-white px-4 text-base text-black shadow-none placeholder:text-gray-400 focus:border-[#8F2D2D] focus:ring-[#8F2D2D]"
                                     />
-
 
                                     <InputError
-                                        message={
-                                            errors.password_confirmation
-                                        }
+                                        message={errors.password_confirmation}
                                     />
-
                                 </div>
-
 
                                 {/* =================================================
                                     CREATE ACCOUNT BUTTON
@@ -329,47 +229,24 @@ export default function Register({
                                     tabIndex={5}
                                     disabled={processing}
                                     data-test="register-user-button"
-                                    className="
-                                        mt-2
-                                        h-14
-                                        w-full
-                                        rounded-xl
-                                        bg-[#8F2D2D]
-                                        text-base
-                                        font-semibold
-                                        text-white
-                                        shadow-none
-                                        hover:bg-[#7C2626]
-                                    "
+                                    className="mt-2 h-14 w-full rounded-xl bg-[#8F2D2D] text-base font-semibold text-white shadow-none hover:bg-[#7C2626]"
                                 >
-
-                                    {processing && (
-                                        <Spinner />
-                                    )}
-
+                                    {processing && <Spinner />}
 
                                     {processing
                                         ? 'Creating account...'
-                                        : 'Create account'
-                                    }
-
+                                        : 'Create account'}
                                 </Button>
-
                             </div>
-
                         )}
-
                     </Form>
-
 
                     {/* =================================================
                         LOGIN LINK
                     ================================================= */}
 
                     <div className="mt-8 text-center text-base text-gray-500">
-
                         Already have an account?{' '}
-
                         <TextLink
                             href={login()}
                             tabIndex={6}
@@ -377,11 +254,8 @@ export default function Register({
                         >
                             Log in
                         </TextLink>
-
                     </div>
-
                 </div>
-
             </div>
         </>
     );

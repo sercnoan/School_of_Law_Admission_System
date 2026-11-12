@@ -11,7 +11,9 @@ uses(RefreshDatabase::class);
 function personalInformationPayload(array $overrides = []): array
 {
     return array_merge([
-        'full_name' => 'Applicant Example',
+        'first_name' => 'Applicant',
+        'middle_name' => 'Maria',
+        'last_name' => 'Example',
         'school_graduated' => 'University of Southeastern Philippines',
         'employment_status' => 'Student',
         'present_address' => 'Davao City',
@@ -19,7 +21,8 @@ function personalInformationPayload(array $overrides = []): array
         'gender' => 'Female',
         'gender_other' => null,
         'contact_number' => '09171234567',
-        'religion' => 'Not specified',
+        'religion' => 'Prefer not to say',
+        'religion_other' => null,
         'civil_status' => 'Single',
         'individual_income' => 0,
         'individual_income_range' => 'Below ₱10,000.00',
@@ -51,7 +54,10 @@ it('creates personal information after applicant confirmation', function () {
 
     $this->assertDatabaseHas('applicant_profiles', [
         'user_id' => $applicant->id,
-        'full_name' => 'Applicant Example',
+        'first_name' => 'Applicant',
+        'middle_name' => 'Maria',
+        'last_name' => 'Example',
+        'full_name' => 'Example, Applicant Maria',
         'present_address' => 'Davao City',
     ]);
 
@@ -83,7 +89,9 @@ it('lets an applicant update only their own submitted personal information', fun
     $this->post(
         '/personal-details/update',
         personalInformationPayload([
-            'full_name' => 'Updated Applicant Name',
+            'first_name' => 'Updated',
+            'middle_name' => 'Applicant',
+            'last_name' => 'Name',
             'present_address' => 'Tagum City',
             'photo' => UploadedFile::fake()->image('replacement.png'),
         ])
@@ -94,7 +102,10 @@ it('lets an applicant update only their own submitted personal information', fun
     $this->assertDatabaseHas('applicant_profiles', [
         'user_id' => $applicant->id,
         'applicant_number' => $profile->applicant_number,
-        'full_name' => 'Updated Applicant Name',
+        'first_name' => 'Updated',
+        'middle_name' => 'Applicant',
+        'last_name' => 'Name',
+        'full_name' => 'Name, Updated Applicant',
         'present_address' => 'Tagum City',
     ]);
 

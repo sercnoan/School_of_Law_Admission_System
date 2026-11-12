@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Application;
+use App\Models\AdmissionProgram;
 use App\Models\ApplicantProfile;
+use App\Models\Application;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class ApplicantProgramController extends Controller
 {
@@ -28,7 +30,6 @@ class ApplicantProgramController extends Controller
 
     private const ACADEMIC_YEAR_START_MONTH = 7;
 
-
     /*
     |--------------------------------------------------------------------------
     | Program Selection Page
@@ -39,7 +40,7 @@ class ApplicantProgramController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
@@ -48,19 +49,32 @@ class ApplicantProgramController extends Controller
             $user->id
         )->first();
 
+        $application = $profile
+            ? Application::where('applicant_profile_id', $profile->id)->first()
+            : null;
+
+        $programs = AdmissionProgram::query()
+            ->where(function ($query) use ($application) {
+                $query->where('is_active', true);
+
+                if ($application?->program) {
+                    $query->orWhere('name', $application->program);
+                }
+            })
+            ->ordered()
+            ->get();
+
         return Inertia::render(
             'Applicant/Program',
             [
-                'application' => $profile ? Application::where('applicant_profile_id', $profile->id)->first() : null,
-                'hasProfile' =>
-                    $profile !== null,
+                'application' => $application,
+                'programs' => $programs,
+                'hasProfile' => $profile !== null,
 
-                'profile' =>
-                    $profile,
+                'profile' => $profile,
             ]
         );
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -72,7 +86,7 @@ class ApplicantProgramController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()
                 ->route('login')
                 ->with(
@@ -80,7 +94,6 @@ class ApplicantProgramController extends Controller
                     'You must be logged in.'
                 );
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -93,14 +106,13 @@ class ApplicantProgramController extends Controller
             $user->id
         )->first();
 
-
         /*
         |--------------------------------------------------------------------------
         | Profile Required
         |--------------------------------------------------------------------------
         */
 
-        if (!$profile) {
+        if (! $profile) {
             return redirect()
                 ->route('personal.details')
                 ->with(
@@ -109,6 +121,10 @@ class ApplicantProgramController extends Controller
                 );
         }
 
+        $currentProgram = Application::where(
+            'applicant_profile_id',
+            $profile->id
+        )->value('program');
 
         /*
         |--------------------------------------------------------------------------
@@ -120,10 +136,16 @@ class ApplicantProgramController extends Controller
             'program' => [
                 'required',
                 'string',
-                'in:Juris Doctor [Thesis] (JD),Master of Legal Studies-Juris Doctor (MLS-JD)',
+                Rule::exists('admission_programs', 'name')
+                    ->where(function ($query) use ($currentProgram) {
+                        $query->where('is_active', true);
+
+                        if ($currentProgram) {
+                            $query->orWhere('name', $currentProgram);
+                        }
+                    }),
             ],
         ]);
-
 
         /*
         |--------------------------------------------------------------------------
@@ -149,7 +171,7 @@ class ApplicantProgramController extends Controller
 
             $application ??= new Application(['applicant_profile_id' => $profile->id]);
             $application->program = $validated['program'];
-            if (!$application->exists || empty($application->academic_year)) {
+            if (! $application->exists || empty($application->academic_year)) {
                 $application->academic_year = $this->getCurrentAcademicYear();
             }
             $application->save();
@@ -158,7 +180,6 @@ class ApplicantProgramController extends Controller
                 ->with('success', 'Program selected successfully.');
         });
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -178,10 +199,9 @@ class ApplicantProgramController extends Controller
 
                 : $now->year - 1;
 
-
         return
-            $startYear .
-            '-' .
+            $startYear.
+            '-'.
             ($startYear + 1);
     }
 }

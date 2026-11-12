@@ -1158,34 +1158,6 @@ export default function ApplicationDetails({
                                             type="button"
                                             onClick={() =>
                                                 updateApplicationStatus(
-                                                    'Under Review'
-                                                )
-                                            }
-                                            disabled={Boolean(application.schedule_id)}
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-2
-                                                rounded-lg
-                                                disabled:cursor-not-allowed disabled:opacity-50
-                                                bg-orange-600
-                                                px-5
-                                                py-3
-                                                font-medium
-                                                text-white
-                                                transition
-                                                hover:bg-orange-700
-                                            "
-                                        >
-                                            <Clock size={18} />
-
-                                            Mark Pending
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                updateApplicationStatus(
                                                     'Approved'
                                                 )
                                             }
@@ -1209,34 +1181,6 @@ export default function ApplicationDetails({
                                             <CheckCircle size={18} />
 
                                             Approve Application
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                updateApplicationStatus(
-                                                    'Declined'
-                                                )
-                                            }
-                                            disabled={Boolean(application.schedule_id)}
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-2
-                                                rounded-lg
-                                                disabled:cursor-not-allowed disabled:opacity-50
-                                                bg-red-600
-                                                px-5
-                                                py-3
-                                                font-medium
-                                                text-white
-                                                transition
-                                                hover:bg-red-700
-                                            "
-                                        >
-                                            <XCircle size={18} />
-
-                                            Decline Application
                                         </button>
 
                                     </div>

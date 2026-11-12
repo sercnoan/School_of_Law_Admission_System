@@ -31,10 +31,9 @@ class InterviewerController extends Controller
             ->first();
 
         $requirements = DB::table('requirements')
-            ->where(function ($query) use ($profile) {
-                $query->where('program', $profile->program)->orWhere('program', 'Both');
-            })
-            ->where('is_required', 1)
+            ->where('program', $profile->program)
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
             ->orderBy('requirement_id')
             ->get();
 

@@ -16,6 +16,8 @@ import {
     LogOut,
     ChevronRight,
     ShieldCheck,
+    SlidersHorizontal,
+    BarChart3,
 } from 'lucide-react';
 
 const applicantNavigation = [
@@ -29,6 +31,10 @@ const applicantNavigation = [
 const adminNavigation = [
     ['/admin/dashboard', 'Overview', LayoutDashboard],
     ['/admin/applications', 'Applications', FileText],
+    ['/admin/reports', 'Reports', BarChart3],
+    ['/admin/programs', 'Programs', GraduationCap],
+    ['/admin/admission-requirements', 'Requirements', ClipboardList],
+    ['/admin/form-options', 'Form options', SlidersHorizontal],
     ['/admin/examination-schedules', 'Exam schedules', CalendarDays],
     ['/admin/examinees', 'Examinees', Users],
     ['/admin/interviewees', 'Interviewees', UserCheck],

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApplicantProfile;
+use App\Models\ProfileOption;
+use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -24,6 +26,10 @@ class ApplicantProfileController extends Controller
             [
                 'profile' => $profile,
                 'email' => $user->email,
+                'formOptions' => $this->formOptions($profile),
+                'schools' => School::active()
+                    ->orderBy('name')
+                    ->get(['name', 'region']),
             ]
         );
     }
@@ -85,7 +91,8 @@ class ApplicantProfileController extends Controller
 
         $validated = $this->validateProfile(
             $request,
-            !$profile->photo_path
+            ! $profile->photo_path,
+            $profile
         );
 
         $photo = $validated['photo'] ?? null;
@@ -125,9 +132,9 @@ class ApplicantProfileController extends Controller
 
     private function validateProfile(
         Request $request,
-        bool $photoRequired = false
-    ): array
-    {
+        bool $photoRequired = false,
+        ?ApplicantProfile $profile = null
+    ): array {
         $validated = $request->validate([
             'photo' => [
                 $photoRequired ? 'required' : 'nullable',
@@ -135,43 +142,67 @@ class ApplicantProfileController extends Controller
                 'mimes:jpg,jpeg,png,webp',
                 'max:10240',
             ],
-            'full_name' => 'required|string|max:255',
-            'school_graduated' => 'required|string|max:255',
-            'employment_status' => 'required|string|max:100',
+            'first_name' => 'required|string|max:100',
+            'middle_name' => 'nullable|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'school_graduated' => [
+                'required',
+                'string',
+                'max:255',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (
+                        $value !== '__other__'
+                        && ! School::active()->where('name', $value)->exists()
+                    ) {
+                        $fail('Select a college or university from the list.');
+                    }
+                },
+            ],
+            'school_graduated_other' => [
+                'required_if:school_graduated,__other__',
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'employment_status' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::in($this->allowedValues('employment_status', $profile?->employment_status)),
+            ],
             'present_address' => 'required|string',
             'age' => 'required|integer|min:1|max:100',
-            'gender' => 'required|in:Male,Female,Other',
+            'gender' => [
+                'required',
+                Rule::in(ProfileOption::activeValues('gender')),
+            ],
             'gender_other' => 'required_if:gender,Other|nullable|string|max:100',
             'contact_number' => 'required|string|max:20',
-            'religion' => 'required|string|max:100',
-            'civil_status' => 'required|in:Single,Married,Widowed,Separated,Divorced',
+            'religion' => [
+                'required',
+                Rule::in(ProfileOption::activeValues('religion')),
+            ],
+            'religion_other' => 'required_if:religion,Other|nullable|string|max:100',
+            'civil_status' => [
+                'required',
+                Rule::in($this->allowedValues('civil_status', $profile?->civil_status)),
+            ],
             'individual_income' => 'nullable|numeric|min:0',
             'individual_income_range' => [
                 'required',
-                Rule::in([
-                    'Below ₱10,000.00',
-                    '₱10,001.00 – ₱20,000.00',
-                    '₱20,001.00 – ₱30,000.00',
-                    '₱30,001.00 – ₱40,000.00',
-                    '₱40,001.00 – ₱50,000.00',
-                    '₱50,001.00 – ₱100,000.00',
-                    'Above ₱100,000.00',
-                ]),
+                Rule::in($this->allowedValues('income_range', $profile?->individual_income_range)),
             ],
             'family_income' => 'nullable|numeric|min:0',
             'family_income_range' => [
                 'required',
-                Rule::in([
-                    'Below ₱10,000.00',
-                    '₱10,001.00 – ₱20,000.00',
-                    '₱20,001.00 – ₱30,000.00',
-                    '₱30,001.00 – ₱40,000.00',
-                    '₱40,001.00 – ₱50,000.00',
-                    '₱50,001.00 – ₱100,000.00',
-                    'Above ₱100,000.00',
-                ]),
+                Rule::in($this->allowedValues('income_range', $profile?->family_income_range)),
             ],
-            'ethnic_affiliation' => 'required|string|max:100',
+            'ethnic_affiliation' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::in(ProfileOption::activeValues('ethnic_affiliation')),
+            ],
             'ethnic_affiliation_other' => 'required_if:ethnic_affiliation,Other|nullable|string|max:100',
             'is_indigenous' => 'required|boolean',
             'indigenous_community' => 'nullable|string|max:255',
@@ -185,11 +216,11 @@ class ApplicantProfileController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!(bool) $validated['is_indigenous']) {
+        if (! (bool) $validated['is_indigenous']) {
             $validated['indigenous_community'] = null;
         }
 
-        if (!(bool) $validated['is_pwd']) {
+        if (! (bool) $validated['is_pwd']) {
             $validated['pwd_type'] = null;
         }
 
@@ -211,11 +242,34 @@ class ApplicantProfileController extends Controller
         $validated['gender'] = $genderToSave;
         unset($validated['gender_other']);
 
+        $validated['religion'] =
+            $validated['religion'] === 'Other'
+                ? trim($validated['religion_other'])
+                : $validated['religion'];
+        unset($validated['religion_other']);
+
         $validated['ethnic_affiliation'] =
             $validated['ethnic_affiliation'] === 'Other'
                 ? trim($validated['ethnic_affiliation_other'])
                 : $validated['ethnic_affiliation'];
         unset($validated['ethnic_affiliation_other']);
+
+        $validated['first_name'] = trim($validated['first_name']);
+        $validated['middle_name'] = filled($validated['middle_name'] ?? null)
+            ? trim($validated['middle_name'])
+            : null;
+        $validated['last_name'] = trim($validated['last_name']);
+        $validated['full_name'] = $this->formatFullName(
+            $validated['first_name'],
+            $validated['middle_name'],
+            $validated['last_name']
+        );
+
+        $validated['school_graduated'] =
+            $validated['school_graduated'] === '__other__'
+                ? trim($validated['school_graduated_other'])
+                : $validated['school_graduated'];
+        unset($validated['school_graduated_other']);
 
         if ($validated['family_income'] === null) {
             unset($validated['family_income']);
@@ -226,6 +280,50 @@ class ApplicantProfileController extends Controller
         }
 
         return $validated;
+    }
+
+    private function formatFullName(
+        string $firstName,
+        ?string $middleName,
+        string $lastName
+    ): string {
+        $givenNames = collect([$firstName, $middleName])
+            ->filter()
+            ->implode(' ');
+
+        return "{$lastName}, {$givenNames}";
+    }
+
+    private function formOptions(?ApplicantProfile $profile): array
+    {
+        return [
+            'employment_status' => $this->allowedValues(
+                'employment_status',
+                $profile?->employment_status
+            ),
+            'civil_status' => $this->allowedValues(
+                'civil_status',
+                $profile?->civil_status
+            ),
+            'gender' => ProfileOption::activeValues('gender'),
+            'religion' => ProfileOption::activeValues('religion'),
+            'ethnic_affiliation' => ProfileOption::activeValues('ethnic_affiliation'),
+            'income_range' => array_values(array_unique([
+                ...$this->allowedValues('income_range', $profile?->individual_income_range),
+                ...$this->allowedValues('income_range', $profile?->family_income_range),
+            ])),
+        ];
+    }
+
+    private function allowedValues(string $field, ?string $currentValue = null): array
+    {
+        $values = ProfileOption::activeValues($field);
+
+        if (filled($currentValue) && ! in_array($currentValue, $values, true)) {
+            $values[] = $currentValue;
+        }
+
+        return $values;
     }
 
     private function generateApplicantNumber(): string

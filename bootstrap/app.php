@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureEmailOtpIsVerified;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InterviewerMiddleware;
@@ -45,13 +46,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'interviewer' => InterviewerMiddleware::class,
+            'otp.verified' => EnsureEmailOtpIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) =>
-                $request->is('api/*') ||
+            fn (Request $request) => $request->is('api/*') ||
                 $request->expectsJson(),
         );
 

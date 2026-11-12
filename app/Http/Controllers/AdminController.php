@@ -220,31 +220,13 @@ class AdminController extends Controller
             'requirements'
         )
 
-            ->where(
-                function ($query) use (
-                    $application
-                ) {
-                    $query
-                        ->where(
-                            'program',
-                            $application->program
-                        )
+            ->where('program', $application->program)
 
-                        ->orWhere(
-                            'program',
-                            'Both'
-                        );
-                }
-            )
+            ->where('is_active', 1)
 
-            ->where(
-                'is_required',
-                1
-            )
+            ->orderBy('sort_order')
 
-            ->orderBy(
-                'requirement_id'
-            )
+            ->orderBy('requirement_id')
 
             ->get();
 
@@ -631,8 +613,10 @@ class AdminController extends Controller
 
             if ($validated['application_status'] === 'Approved') {
                 $requirements = DB::table('requirements')
-                    ->whereIn('program', [$application->program, 'Both'])
+                    ->where('program', $application->program)
                     ->where('is_required', 1)
+                    ->where('is_active', 1)
+                    ->orderBy('sort_order')
                     ->orderBy('requirement_id')
                     ->get();
 

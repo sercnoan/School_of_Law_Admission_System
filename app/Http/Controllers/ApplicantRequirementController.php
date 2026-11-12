@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ApplicantRequirementController extends Controller
@@ -21,7 +22,7 @@ class ApplicantRequirementController extends Controller
 
         $profile = $user->applicantProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return redirect()->route('personal.details');
         }
 
@@ -29,7 +30,7 @@ class ApplicantRequirementController extends Controller
             ->where('applicant_profile_id', $profile->id)
             ->first();
 
-        if (!$application) {
+        if (! $application) {
             return redirect()->route('applicant.program');
         }
 
@@ -40,12 +41,9 @@ class ApplicantRequirementController extends Controller
         */
 
         $requirements = DB::table('requirements')
-            ->where(function ($query) use ($application) {
-                $query
-                    ->where('program', $application->program)
-                    ->orWhere('program', 'Both');
-            })
-            ->where('is_required', 1)
+            ->where('program', $application->program)
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
             ->orderBy('requirement_id')
             ->get();
 
@@ -66,7 +64,6 @@ class ApplicantRequirementController extends Controller
         ]);
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Remove Requirement Submission
@@ -78,7 +75,7 @@ class ApplicantRequirementController extends Controller
         return DB::transaction(function () use ($request, $requirementId) {
             $profile = $request->user()->applicantProfile;
 
-            if (!$profile) {
+            if (! $profile) {
                 return redirect()
                     ->route('personal.details')
                     ->with('error', 'Please complete your personal details first.');
@@ -89,14 +86,14 @@ class ApplicantRequirementController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$application) {
+            if (! $application) {
                 return redirect()
                     ->route('applicant.program')
                     ->with('error', 'Please select a program first.');
             }
 
             if (in_array($application->application_status, ['Approved', 'Completed'], true) || $application->schedule_id) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'file' => 'This application is locked. Contact admissions to request corrections.',
                 ]);
             }
@@ -107,7 +104,7 @@ class ApplicantRequirementController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$submission) {
+            if (! $submission) {
                 return redirect()
                     ->route('applicant.requirements')
                     ->with('error', 'The submitted document could not be found.');
@@ -128,7 +125,6 @@ class ApplicantRequirementController extends Controller
                 ->with('success', 'Document removed. You may now upload a new PDF.');
         });
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -156,7 +152,6 @@ class ApplicantRequirementController extends Controller
                 ],
             ]);
 
-
             /*
             |--------------------------------------------------------------------------
             | Get Applicant
@@ -167,12 +162,11 @@ class ApplicantRequirementController extends Controller
 
             $profile = $user->applicantProfile;
 
-            if (!$profile) {
+            if (! $profile) {
                 return redirect()
                     ->route('personal.details')
                     ->with('error', 'Please complete your personal details first.');
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -188,19 +182,16 @@ class ApplicantRequirementController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-
-            if (!$application) {
+            if (! $application) {
                 return redirect()
                     ->route('applicant.program')
                     ->with('error', 'Please select a program first.');
             }
             if (in_array($application->application_status, ['Approved', 'Completed'], true) || $application->schedule_id) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'file' => 'This application is locked. Contact admissions to request corrections.',
                 ]);
             }
-
-
 
             /*
             |--------------------------------------------------------------------------
@@ -213,13 +204,13 @@ class ApplicantRequirementController extends Controller
                     'requirement_id',
                     $requirementId
                 )
+                ->where('is_active', 1)
+                ->where('program', $application->program)
                 ->first();
 
-
-            if (!$requirement) {
+            if (! $requirement) {
                 abort(404, 'Requirement not found.');
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -239,11 +230,10 @@ class ApplicantRequirementController extends Controller
                 ->first();
 
             if ($existingSubmission) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'file' => 'Remove the existing document before uploading another one.',
                 ]);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -259,48 +249,35 @@ class ApplicantRequirementController extends Controller
 
             $fileSize = $file->getSize();
 
-
             $directory =
-                'requirements/' .
+                'requirements/'.
                 $application->application_id;
-
 
             $newFilePath = $file->store(
                 $directory,
                 'public'
             );
 
-
             DB::table('requirement_submissions')
                 ->insert([
-                    'application_id' =>
-                        $application->application_id,
+                    'application_id' => $application->application_id,
 
-                    'requirement_id' =>
-                        $requirementId,
+                    'requirement_id' => $requirementId,
 
-                    'file_name' =>
-                        $fileName,
+                    'file_name' => $fileName,
 
-                    'file_path' =>
-                        $newFilePath,
+                    'file_path' => $newFilePath,
 
-                    'file_type' =>
-                        $fileType,
+                    'file_type' => $fileType,
 
-                    'file_size' =>
-                        $fileSize,
+                    'file_size' => $fileSize,
 
-                    'verification_status' =>
-                        'Pending',
+                    'verification_status' => 'Pending',
 
-                    'remarks' =>
-                        null,
+                    'remarks' => null,
 
-                    'uploaded_at' =>
-                        now(),
+                    'uploaded_at' => now(),
                 ]);
-
 
             /*
             |--------------------------------------------------------------------------
@@ -315,6 +292,84 @@ class ApplicantRequirementController extends Controller
         });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Review Readiness
+    |--------------------------------------------------------------------------
+    |
+    | This endpoint deliberately reads the database again when the applicant
+    | clicks Review and Submit. It prevents a recently completed upload from
+    | leaving the button dependent on stale browser state.
+    |
+    */
+
+    public function review(Request $request)
+    {
+        $profile = $request->user()->applicantProfile;
+
+        if (! $profile) {
+            return response()->json([
+                'ready' => false,
+                'message' => 'Please complete your personal details first.',
+                'submissions' => [],
+            ], 422);
+        }
+
+        $application = DB::table('applications')
+            ->where('applicant_profile_id', $profile->id)
+            ->first();
+
+        if (! $application) {
+            return response()->json([
+                'ready' => false,
+                'message' => 'Please select a program first.',
+                'submissions' => [],
+            ], 422);
+        }
+
+        if ($application->application_status !== 'Pending') {
+            return response()->json([
+                'ready' => false,
+                'message' => 'This application has already been submitted or processed.',
+                'submissions' => [],
+            ], 422);
+        }
+
+        if ($application->schedule_id) {
+            return response()->json([
+                'ready' => false,
+                'message' => 'This application is locked. Contact admissions to request corrections.',
+                'submissions' => [],
+            ], 422);
+        }
+
+        $requiredIds = DB::table('requirements')
+            ->where('program', $application->program)
+            ->where('is_required', 1)
+            ->where('is_active', 1)
+            ->pluck('requirement_id');
+
+        $submissions = DB::table('requirement_submissions')
+            ->where('application_id', $application->application_id)
+            ->orderBy('submission_id')
+            ->get();
+
+        $submittedRequiredCount = $submissions
+            ->whereIn('requirement_id', $requiredIds)
+            ->pluck('requirement_id')
+            ->unique()
+            ->count();
+        $ready = $requiredIds->isNotEmpty()
+            && $submittedRequiredCount === $requiredIds->count();
+
+        return response()->json([
+            'ready' => $ready,
+            'message' => $ready
+                ? null
+                : 'Please upload all required documents before submitting your application.',
+            'submissions' => $submissions,
+        ]);
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -329,12 +384,11 @@ class ApplicantRequirementController extends Controller
 
             $profile = $user->applicantProfile;
 
-            if (!$profile) {
+            if (! $profile) {
                 return redirect()
                     ->route('personal.details')
                     ->with('error', 'Please complete your personal details first.');
             }
-
 
             $application = DB::table('applications')
                 ->where(
@@ -344,19 +398,16 @@ class ApplicantRequirementController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-
-            if (!$application) {
+            if (! $application) {
                 return redirect()
                     ->route('applicant.program')
                     ->with('error', 'No application found.');
             }
             if (in_array($application->application_status, ['Approved', 'Completed'], true) || $application->schedule_id) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'application' => 'This application is locked. Contact admissions to request corrections.',
                 ]);
             }
-
-
 
             /*
             |--------------------------------------------------------------------------
@@ -365,14 +416,10 @@ class ApplicantRequirementController extends Controller
             */
 
             $requirements = DB::table('requirements')
-                ->where(function ($query) use ($application) {
-                    $query
-                        ->where('program', $application->program)
-                        ->orWhere('program', 'Both');
-                })
+                ->where('program', $application->program)
                 ->where('is_required', 1)
+                ->where('is_active', 1)
                 ->get();
-
 
             /*
             |--------------------------------------------------------------------------
@@ -391,7 +438,6 @@ class ApplicantRequirementController extends Controller
                 )
                 ->count();
 
-
             if (
                 $submittedCount <
                 $requirements->count()
@@ -403,7 +449,6 @@ class ApplicantRequirementController extends Controller
                         'Please upload all required documents before submitting your application.'
                     );
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -417,16 +462,12 @@ class ApplicantRequirementController extends Controller
                     $application->application_id
                 )
                 ->update([
-                    'application_status' =>
-                        'Under Review',
+                    'application_status' => 'Under Review',
 
-                    'submitted_at' =>
-                        now(),
+                    'submitted_at' => now(),
 
-                    'updated_at' =>
-                        now(),
+                    'updated_at' => now(),
                 ]);
-
 
             /*
             |--------------------------------------------------------------------------

@@ -367,11 +367,11 @@ export default function Interviewees({
                             )}
                         </div>
 
-                        <div className="hidden overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:block">
+                        <div className="hidden overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-md lg:block">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                        <tr className="border-b-2 border-gray-400 bg-gray-100">
                                             <TableHeader>Interviewee</TableHeader>
                                             <TableHeader>Academic Year</TableHeader>
                                             <TableHeader>Program</TableHeader>
@@ -383,14 +383,14 @@ export default function Interviewees({
                                         </tr>
                                     </thead>
 
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y-[3px] divide-gray-300">
                                         {filteredInterviewees.length > 0 ? (
                                             pagination.pageRecords.map((interviewee) => (
                                                 <tr
                                                     key={interviewee.application_id}
-                                                    className="align-top transition hover:bg-gray-50"
+                                                    className="align-top transition odd:bg-white even:bg-gray-50/70 hover:bg-[#fbf3f3]"
                                                 >
-                                                    <td className="px-5 py-5">
+                                                    <td className="border-l-[6px] border-l-[#922b2b] px-5 py-5">
                                                         <p className="font-semibold text-gray-900">
                                                             {interviewee.full_name}
                                                         </p>
@@ -488,7 +488,7 @@ export default function Interviewees({
                                 pagination.pageRecords.map((interviewee) => (
                                     <div
                                         key={interviewee.application_id}
-                                        className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                                        className="rounded-2xl border border-gray-300 border-l-[6px] border-l-[#922b2b] bg-white p-5 shadow-md transition hover:shadow-lg"
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="min-w-0">
@@ -526,7 +526,7 @@ export default function Interviewees({
                                             />
                                         </div>
 
-                                        <div className="mt-4 border-t border-gray-100 pt-4">
+                                        <div className="mt-4 border-t-2 border-gray-300 pt-4">
                                             <InterviewSchedule
                                                 interviewee={interviewee}
                                                 formatDate={formatDate}

@@ -1,10 +1,26 @@
 import PortalLayout from '@/layouts/portal-layout';
 import { Head, useForm } from '@inertiajs/react';
 
-import { AlertCircle, BadgeCheck, CalendarDays, Camera, CheckCircle2, ClipboardList, FileText, GraduationCap, ImagePlus, LayoutDashboard, Pencil, User, WalletCards, X } from 'lucide-react';
+import {
+    AlertCircle,
+    BadgeCheck,
+    CalendarDays,
+    Camera,
+    CheckCircle2,
+    ClipboardList,
+    FileText,
+    GraduationCap,
+    ImagePlus,
+    LayoutDashboard,
+    Pencil,
+    Search,
+    User,
+    WalletCards,
+    X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-const ethnicAffiliations = [
+const defaultEthnicAffiliations = [
     'Bisaya/Cebuano',
     'Tagalog',
     'Ilocano',
@@ -16,9 +32,10 @@ const ethnicAffiliations = [
     'Moro',
     'Indigenous Peoples Group',
     'Prefer not to say',
+    'Other',
 ];
 
-const monthlyIncomeRanges = [
+const defaultMonthlyIncomeRanges = [
     'Below ₱10,000.00',
     '₱10,001.00 – ₱20,000.00',
     '₱20,001.00 – ₱30,000.00',
@@ -31,22 +48,86 @@ const monthlyIncomeRanges = [
 export default function PersonalDetails({
     profile = null,
     email = null,
+    formOptions = {},
+    schools = [],
 }) {
-
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
 
     const inputClass =
         'w-full rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3.5 text-sm font-medium text-gray-900 outline-none transition placeholder:font-normal placeholder:text-gray-400 hover:border-gray-300 focus:border-[#922b2b] focus:bg-white focus:ring-4 focus:ring-[#922b2b]/10';
 
-    const storedGender = profile?.gender || '';
-    const standardGender = ['Male', 'Female'].includes(
-        storedGender
+    const employmentStatuses = formOptions.employment_status || [
+        'Student',
+        'Employed',
+        'Self-Employed',
+        'Not Currently Employed',
+    ];
+    const civilStatuses = formOptions.civil_status || [
+        'Single',
+        'Married',
+        'Widowed',
+        'Separated',
+        'Divorced',
+    ];
+    const genderOptions = formOptions.gender || [
+        'Male',
+        'Female',
+        'Non-binary',
+        'Genderqueer',
+        'Gender-fluid',
+        'Agender',
+        'Prefer not to say',
+        'Other',
+    ];
+    const religionOptions = formOptions.religion || [
+        'Roman Catholic',
+        'Islam',
+        'Iglesia ni Cristo',
+        'Seventh-day Adventist',
+        'Aglipayan',
+        'Iglesia Filipina Independiente',
+        'Bible Baptist',
+        'United Church of Christ in the Philippines',
+        "Jehovah's Witness",
+        'Church of Christ',
+        'Evangelical / Born Again Christian',
+        'Protestant',
+        'Pentecostal',
+        'Methodist',
+        'Episcopal / Anglican',
+        'The Church of Jesus Christ of Latter-day Saints',
+        'Buddhism',
+        'Hinduism',
+        'Judaism',
+        'Sikhism',
+        'Baháʼí Faith',
+        'Indigenous / Traditional Beliefs',
+        'No religious affiliation',
+        'Prefer not to say',
+        'Other',
+    ];
+    const ethnicAffiliations =
+        formOptions.ethnic_affiliation || defaultEthnicAffiliations;
+    const monthlyIncomeRanges =
+        formOptions.income_range || defaultMonthlyIncomeRanges;
+
+    const storedSchool = profile?.school_graduated || '';
+    const storedSchoolIsListed = schools.some(
+        (school) => school.name === storedSchool,
     );
-    const storedEthnicAffiliation =
-        profile?.ethnic_affiliation || '';
-    const standardEthnicAffiliation =
-        ethnicAffiliations.includes(storedEthnicAffiliation);
+    const storedGender = profile?.gender || '';
+    const standardGender = genderOptions
+        .filter((option) => option !== 'Other')
+        .includes(storedGender);
+    const storedReligion = profile?.religion || '';
+    const standardReligion = religionOptions
+        .filter((option) => option !== 'Other')
+        .includes(storedReligion);
+    const storedEthnicAffiliation = profile?.ethnic_affiliation || '';
+    const standardEthnicAffiliation = ethnicAffiliations
+        .filter((option) => option !== 'Other')
+        .includes(storedEthnicAffiliation);
 
     const [isEditing, setIsEditing] = useState(false);
     const [showReview, setShowReview] = useState(false);
@@ -62,20 +143,24 @@ export default function PersonalDetails({
         reset,
     } = useForm({
         photo: null,
-        full_name: profile?.full_name || '',
-        school_graduated: profile?.school_graduated || '',
+        first_name: profile?.first_name || '',
+        middle_name: profile?.middle_name || '',
+        last_name: profile?.last_name || '',
+        school_graduated: profile
+            ? storedSchoolIsListed
+                ? storedSchool
+                : '__other__'
+            : '',
+        school_graduated_other:
+            profile && !storedSchoolIsListed ? storedSchool : '',
         employment_status: profile?.employment_status || '',
         present_address: profile?.present_address || '',
         age: profile?.age ?? '',
-        gender: profile
-            ? standardGender
-                ? storedGender
-                : 'Other'
-            : '',
-        gender_other:
-            profile && !standardGender ? storedGender : '',
+        gender: profile ? (standardGender ? storedGender : 'Other') : '',
+        gender_other: profile && !standardGender ? storedGender : '',
         contact_number: profile?.contact_number || '',
-        religion: profile?.religion || '',
+        religion: profile ? (standardReligion ? storedReligion : 'Other') : '',
+        religion_other: profile && !standardReligion ? storedReligion : '',
         civil_status: profile?.civil_status || '',
         individual_income: profile?.individual_income ?? '',
         individual_income_range: profile?.individual_income_range || '',
@@ -89,9 +174,7 @@ export default function PersonalDetails({
                   : ''
             : '',
         ethnic_affiliation_other:
-            profile &&
-            storedEthnicAffiliation &&
-            !standardEthnicAffiliation
+            profile && storedEthnicAffiliation && !standardEthnicAffiliation
                 ? storedEthnicAffiliation
                 : '',
         is_indigenous:
@@ -99,11 +182,9 @@ export default function PersonalDetails({
             profile?.is_indigenous === undefined
                 ? ''
                 : String(Number(profile.is_indigenous)),
-        indigenous_community:
-            profile?.indigenous_community || '',
+        indigenous_community: profile?.indigenous_community || '',
         is_pwd:
-            profile?.is_pwd === null ||
-            profile?.is_pwd === undefined
+            profile?.is_pwd === null || profile?.is_pwd === undefined
                 ? ''
                 : String(Number(profile.is_pwd)),
         pwd_type: profile?.pwd_type || '',
@@ -114,7 +195,7 @@ export default function PersonalDetails({
             typeof File !== 'undefined' && data.photo instanceof File
                 ? URL.createObjectURL(data.photo)
                 : null,
-        [data.photo]
+        [data.photo],
     );
 
     useEffect(
@@ -123,7 +204,7 @@ export default function PersonalDetails({
                 URL.revokeObjectURL(selectedPhotoPreview);
             }
         },
-        [selectedPhotoPreview]
+        [selectedPhotoPreview],
     );
 
     const savedPhotoUrl = profile?.photo_path
@@ -137,7 +218,8 @@ export default function PersonalDetails({
         clearErrors();
 
         const requiredFields = {
-            full_name: 'Enter your full name.',
+            first_name: 'Enter your first name.',
+            last_name: 'Enter your last name.',
             school_graduated: 'Enter the school you graduated from.',
             employment_status: 'Select your employment status.',
             present_address: 'Enter your present address.',
@@ -146,8 +228,10 @@ export default function PersonalDetails({
             contact_number: 'Enter your contact number.',
             religion: 'Enter your religion.',
             civil_status: 'Select your civil status.',
-            individual_income_range: 'Select your individual gross monthly income range.',
-            family_income_range: 'Select your family gross monthly income range.',
+            individual_income_range:
+                'Select your individual gross monthly income range.',
+            family_income_range:
+                'Select your family gross monthly income range.',
             ethnic_affiliation: 'Select your ethnic affiliation.',
             is_indigenous: 'Select Yes or No.',
             is_pwd: 'Select Yes or No.',
@@ -158,8 +242,8 @@ export default function PersonalDetails({
                 ([field]) =>
                     data[field] === '' ||
                     data[field] === null ||
-                    data[field] === undefined
-            )
+                    data[field] === undefined,
+            ),
         );
 
         if (!photoPreview) {
@@ -167,19 +251,26 @@ export default function PersonalDetails({
         }
 
         if (
-            data.gender === 'Other' &&
-            !data.gender_other.trim()
+            data.school_graduated === '__other__' &&
+            !data.school_graduated_other.trim()
         ) {
-            missing.gender_other =
-                'Describe your gender.';
+            missing.school_graduated_other =
+                'Enter the college or university name.';
+        }
+
+        if (data.gender === 'Other' && !data.gender_other.trim()) {
+            missing.gender_other = 'Describe your gender.';
+        }
+
+        if (data.religion === 'Other' && !data.religion_other.trim()) {
+            missing.religion_other = 'Enter your religion or belief.';
         }
 
         if (
             data.ethnic_affiliation === 'Other' &&
             !data.ethnic_affiliation_other.trim()
         ) {
-            missing.ethnic_affiliation_other =
-                'Enter your ethnic affiliation.';
+            missing.ethnic_affiliation_other = 'Enter your ethnic affiliation.';
         }
 
         if (Object.keys(missing).length > 0) {
@@ -221,8 +312,7 @@ export default function PersonalDetails({
         setIsEditing(false);
     };
 
-    const yesNo = (value) =>
-        Number(value) === 1 ? 'Yes' : 'No';
+    const yesNo = (value) => (Number(value) === 1 ? 'Yes' : 'No');
 
     const errorCount = Object.keys(errors).length;
 
@@ -266,12 +356,9 @@ export default function PersonalDetails({
             <div className="min-h-screen bg-gray-50">
                 {/* MOBILE HEADER */}
 
-
                 {/* MOBILE OVERLAY */}
 
-
                 {/* SIDEBAR */}
-
 
                 {/* MAIN CONTENT */}
                 <PortalLayout audience="applicant">
@@ -302,9 +389,7 @@ export default function PersonalDetails({
                                     email={email}
                                     maroon={maroon}
                                     yesNo={yesNo}
-                                    onEdit={() =>
-                                        setIsEditing(true)
-                                    }
+                                    onEdit={() => setIsEditing(true)}
                                 />
                             ) : (
                                 <form
@@ -322,8 +407,13 @@ export default function PersonalDetails({
                                                 </h2>
 
                                                 <p className="mt-1.5 max-w-2xl text-sm leading-6 text-gray-500">
-                                                    Enter your information carefully. You will review it before saving. Fields marked
-                                                    with <span className="font-semibold text-red-500">*</span>{' '}
+                                                    Enter your information
+                                                    carefully. You will review
+                                                    it before saving. Fields
+                                                    marked with{' '}
+                                                    <span className="font-semibold text-red-500">
+                                                        *
+                                                    </span>{' '}
                                                     are required.
                                                 </p>
                                             </div>
@@ -345,11 +435,13 @@ export default function PersonalDetails({
 
                                             <div>
                                                 <p className="text-sm font-semibold text-red-800">
-                                                    Some information needs your attention.
+                                                    Some information needs your
+                                                    attention.
                                                 </p>
 
                                                 <p className="mt-1 text-sm leading-5 text-red-700">
-                                                    Check the fields highlighted below and try again.
+                                                    Check the fields highlighted
+                                                    below and try again.
                                                 </p>
                                             </div>
                                         </div>
@@ -358,7 +450,6 @@ export default function PersonalDetails({
                                     {/* FORM BODY */}
                                     <div className="p-5 sm:p-7">
                                         <div className="grid grid-cols-1 gap-x-5 gap-y-5 md:grid-cols-12">
-
                                             {/* APPLICANT PHOTO */}
                                             <div className="md:col-span-12">
                                                 <CleanField
@@ -366,16 +457,22 @@ export default function PersonalDetails({
                                                     error={errors.photo}
                                                     required
                                                 >
-                                                    <div className={`flex flex-col gap-5 rounded-2xl border p-4 sm:flex-row sm:items-center ${errors.photo ? 'border-red-300 bg-red-50/50' : 'border-gray-200 bg-gray-50/70'}`}>
+                                                    <div
+                                                        className={`flex flex-col gap-5 rounded-2xl border p-4 sm:flex-row sm:items-center ${errors.photo ? 'border-red-300 bg-red-50/50' : 'border-gray-200 bg-gray-50/70'}`}
+                                                    >
                                                         <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-400">
                                                             {photoPreview ? (
                                                                 <img
-                                                                    src={photoPreview}
+                                                                    src={
+                                                                        photoPreview
+                                                                    }
                                                                     alt="Applicant photo preview"
                                                                     className="h-full w-full object-cover"
                                                                 />
                                                             ) : (
-                                                                <Camera size={36} />
+                                                                <Camera
+                                                                    size={36}
+                                                                />
                                                             )}
                                                         </div>
 
@@ -386,20 +483,32 @@ export default function PersonalDetails({
                                                                     : 'Upload a clear, recent photo of yourself.'}
                                                             </p>
                                                             <p className="mt-1 text-xs leading-5 text-gray-500">
-                                                                JPG, PNG, or WebP. Maximum file size: 10 MB.
+                                                                JPG, PNG, or
+                                                                WebP. Maximum
+                                                                file size: 10
+                                                                MB.
                                                             </p>
 
                                                             <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#d9b8b8] bg-white px-4 py-2.5 text-sm font-bold text-[#691f1f] transition hover:bg-[#fffafa]">
-                                                                <ImagePlus size={17} />
-                                                                {photoPreview ? 'Change Photo' : 'Choose Photo'}
+                                                                <ImagePlus
+                                                                    size={17}
+                                                                />
+                                                                {photoPreview
+                                                                    ? 'Change Photo'
+                                                                    : 'Choose Photo'}
                                                                 <input
                                                                     type="file"
                                                                     accept="image/jpeg,image/png,image/webp"
                                                                     className="sr-only"
-                                                                    onChange={(event) =>
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) =>
                                                                         setData(
                                                                             'photo',
-                                                                            event.target.files?.[0] || null
+                                                                            event
+                                                                                .target
+                                                                                .files?.[0] ||
+                                                                                null,
                                                                         )
                                                                     }
                                                                 />
@@ -409,24 +518,65 @@ export default function PersonalDetails({
                                                 </CleanField>
                                             </div>
 
-                                            {/* FULL NAME */}
-                                            <div className="md:col-span-12">
+                                            {/* NAME */}
+                                            <div className="md:col-span-4">
                                                 <CleanField
-                                                    label="Full Name"
-                                                    error={errors.full_name}
+                                                    label="First Name"
+                                                    error={errors.first_name}
                                                     required
                                                 >
                                                     <input
                                                         type="text"
-                                                        value={data.full_name}
+                                                        value={data.first_name}
                                                         onChange={(e) =>
                                                             setData(
-                                                                'full_name',
-                                                                e.target.value
+                                                                'first_name',
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
-                                                        placeholder="Last Name, First Name, Middle Name"
+                                                        placeholder="Enter first name"
+                                                    />
+                                                </CleanField>
+                                            </div>
+
+                                            <div className="md:col-span-4">
+                                                <CleanField
+                                                    label="Middle Name"
+                                                    error={errors.middle_name}
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        value={data.middle_name}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'middle_name',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className={inputClass}
+                                                        placeholder="Enter middle name (optional)"
+                                                    />
+                                                </CleanField>
+                                            </div>
+
+                                            <div className="md:col-span-4">
+                                                <CleanField
+                                                    label="Last Name"
+                                                    error={errors.last_name}
+                                                    required
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        value={data.last_name}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'last_name',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className={inputClass}
+                                                        placeholder="Enter last name"
                                                     />
                                                 </CleanField>
                                             </div>
@@ -436,24 +586,45 @@ export default function PersonalDetails({
                                                 <CleanField
                                                     label="School Graduated"
                                                     error={
-                                                        errors.school_graduated
+                                                        errors.school_graduated ||
+                                                        errors.school_graduated_other
                                                     }
                                                     required
                                                 >
-                                                    <input
-                                                        type="text"
+                                                    <SchoolSearchSelect
+                                                        schools={schools}
                                                         value={
                                                             data.school_graduated
                                                         }
-                                                        onChange={(e) =>
+                                                        onChange={(value) =>
                                                             setData(
                                                                 'school_graduated',
-                                                                e.target.value
+                                                                value,
                                                             )
                                                         }
                                                         className={inputClass}
-                                                        placeholder="Enter school or university"
                                                     />
+                                                    {data.school_graduated ===
+                                                        '__other__' && (
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                data.school_graduated_other
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'school_graduated_other',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={
+                                                                inputClass +
+                                                                ' mt-3'
+                                                            }
+                                                            placeholder="Enter the complete college or university name"
+                                                        />
+                                                    )}
                                                 </CleanField>
                                             </div>
 
@@ -473,26 +644,27 @@ export default function PersonalDetails({
                                                         onChange={(e) =>
                                                             setData(
                                                                 'employment_status',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
                                                     >
                                                         <option value="">
-                                                            Select employment status
+                                                            Select employment
+                                                            status
                                                         </option>
-                                                        <option value="Student">
-                                                            Student
-                                                        </option>
-                                                        <option value="Employed">
-                                                            Employed
-                                                        </option>
-                                                        <option value="Self-Employed">
-                                                            Self-Employed
-                                                        </option>
-                                                        <option value="Not Currently Employed">
-                                                            Not Currently Employed
-                                                        </option>
+                                                        {employmentStatuses.map(
+                                                            (status) => (
+                                                                <option
+                                                                    key={status}
+                                                                    value={
+                                                                        status
+                                                                    }
+                                                                >
+                                                                    {status}
+                                                                </option>
+                                                            ),
+                                                        )}
                                                     </select>
                                                 </CleanField>
                                             </div>
@@ -514,7 +686,7 @@ export default function PersonalDetails({
                                                         onChange={(e) =>
                                                             setData(
                                                                 'present_address',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={`${inputClass} resize-none`}
@@ -538,7 +710,7 @@ export default function PersonalDetails({
                                                         onChange={(e) =>
                                                             setData(
                                                                 'age',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
@@ -551,9 +723,7 @@ export default function PersonalDetails({
                                             <div className="md:col-span-4">
                                                 <CleanField
                                                     label="Civil Status"
-                                                    error={
-                                                        errors.civil_status
-                                                    }
+                                                    error={errors.civil_status}
                                                     required
                                                 >
                                                     <select
@@ -563,7 +733,7 @@ export default function PersonalDetails({
                                                         onChange={(e) =>
                                                             setData(
                                                                 'civil_status',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
@@ -571,21 +741,18 @@ export default function PersonalDetails({
                                                         <option value="">
                                                             Select civil status
                                                         </option>
-                                                        <option value="Single">
-                                                            Single
-                                                        </option>
-                                                        <option value="Married">
-                                                            Married
-                                                        </option>
-                                                        <option value="Widowed">
-                                                            Widowed
-                                                        </option>
-                                                        <option value="Separated">
-                                                            Separated
-                                                        </option>
-                                                        <option value="Divorced">
-                                                            Divorced
-                                                        </option>
+                                                        {civilStatuses.map(
+                                                            (status) => (
+                                                                <option
+                                                                    key={status}
+                                                                    value={
+                                                                        status
+                                                                    }
+                                                                >
+                                                                    {status}
+                                                                </option>
+                                                            ),
+                                                        )}
                                                     </select>
                                                 </CleanField>
                                             </div>
@@ -602,11 +769,12 @@ export default function PersonalDetails({
                                                             value={data.gender}
                                                             onChange={(e) => {
                                                                 const value =
-                                                                    e.target.value;
+                                                                    e.target
+                                                                        .value;
 
                                                                 setData(
                                                                     'gender',
-                                                                    value
+                                                                    value,
                                                                 );
 
                                                                 if (
@@ -615,24 +783,31 @@ export default function PersonalDetails({
                                                                 ) {
                                                                     setData(
                                                                         'gender_other',
-                                                                        ''
+                                                                        '',
                                                                     );
                                                                 }
                                                             }}
-                                                            className={inputClass}
+                                                            className={
+                                                                inputClass
+                                                            }
                                                         >
                                                             <option value="">
                                                                 Select gender
                                                             </option>
-                                                            <option value="Male">
-                                                                Male
-                                                            </option>
-                                                            <option value="Female">
-                                                                Female
-                                                            </option>
-                                                            <option value="Other">
-                                                                Other
-                                                            </option>
+                                                            {genderOptions.map(
+                                                                (gender) => (
+                                                                    <option
+                                                                        key={
+                                                                            gender
+                                                                        }
+                                                                        value={
+                                                                            gender
+                                                                        }
+                                                                    >
+                                                                        {gender}
+                                                                    </option>
+                                                                ),
+                                                            )}
                                                         </select>
 
                                                         {data.gender ===
@@ -642,7 +817,8 @@ export default function PersonalDetails({
                                                                     htmlFor="gender_other"
                                                                     className="mb-2 block text-xs font-semibold text-gray-600"
                                                                 >
-                                                                    Specify gender
+                                                                    Specify
+                                                                    gender
                                                                     <span className="ml-1 text-red-500">
                                                                         *
                                                                     </span>
@@ -654,15 +830,23 @@ export default function PersonalDetails({
                                                                     value={
                                                                         data.gender_other
                                                                     }
-                                                                    onChange={(e) =>
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
                                                                         setData(
                                                                             'gender_other',
-                                                                            e.target.value
+                                                                            e
+                                                                                .target
+                                                                                .value,
                                                                         )
                                                                     }
-                                                                    className={inputClass}
+                                                                    className={
+                                                                        inputClass
+                                                                    }
                                                                     placeholder="Enter gender"
-                                                                    maxLength={100}
+                                                                    maxLength={
+                                                                        100
+                                                                    }
                                                                     autoComplete="off"
                                                                     autoFocus
                                                                 />
@@ -702,7 +886,7 @@ export default function PersonalDetails({
                                                         onChange={(e) =>
                                                             setData(
                                                                 'contact_number',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
@@ -715,21 +899,64 @@ export default function PersonalDetails({
                                             <div className="md:col-span-6">
                                                 <CleanField
                                                     label="Religion"
-                                                    error={errors.religion}
+                                                    error={
+                                                        errors.religion ||
+                                                        errors.religion_other
+                                                    }
                                                     required
                                                 >
-                                                    <input
-                                                        type="text"
+                                                    <select
                                                         value={data.religion}
                                                         onChange={(e) =>
                                                             setData(
                                                                 'religion',
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         className={inputClass}
-                                                        placeholder="Enter religion"
-                                                    />
+                                                    >
+                                                        <option value="">
+                                                            Select religion
+                                                        </option>
+                                                        {religionOptions.map(
+                                                            (religion) => (
+                                                                <option
+                                                                    key={
+                                                                        religion
+                                                                    }
+                                                                    value={
+                                                                        religion
+                                                                    }
+                                                                >
+                                                                    {religion}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+
+                                                    {data.religion ===
+                                                        'Other' && (
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                data.religion_other
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'religion_other',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={
+                                                                inputClass +
+                                                                ' mt-3'
+                                                            }
+                                                            placeholder="Enter religion or belief"
+                                                            maxLength={100}
+                                                            autoComplete="off"
+                                                        />
+                                                    )}
                                                 </CleanField>
                                             </div>
 
@@ -749,29 +976,34 @@ export default function PersonalDetails({
                                                         onChange={(event) =>
                                                             setData(
                                                                 'individual_income_range',
-                                                                event.target.value
+                                                                event.target
+                                                                    .value,
                                                             )
                                                         }
                                                         className={inputClass}
                                                     >
                                                         <option value="">
-                                                            Select an income range
+                                                            Select an income
+                                                            range
                                                         </option>
                                                         {monthlyIncomeRanges.map(
                                                             (range) => (
                                                                 <option
                                                                     key={range}
-                                                                    value={range}
+                                                                    value={
+                                                                        range
+                                                                    }
                                                                 >
                                                                     {range}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                 </CleanField>
 
                                                 <p className="mt-1.5 text-xs text-gray-400">
-                                                    Select the range for your personal monthly income.
+                                                    Select the range for your
+                                                    personal monthly income.
                                                 </p>
                                             </div>
 
@@ -791,29 +1023,35 @@ export default function PersonalDetails({
                                                         onChange={(event) =>
                                                             setData(
                                                                 'family_income_range',
-                                                                event.target.value
+                                                                event.target
+                                                                    .value,
                                                             )
                                                         }
                                                         className={inputClass}
                                                     >
                                                         <option value="">
-                                                            Select an income range
+                                                            Select an income
+                                                            range
                                                         </option>
                                                         {monthlyIncomeRanges.map(
                                                             (range) => (
                                                                 <option
                                                                     key={range}
-                                                                    value={range}
+                                                                    value={
+                                                                        range
+                                                                    }
                                                                 >
                                                                     {range}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                 </CleanField>
 
                                                 <p className="mt-1.5 text-xs text-gray-400">
-                                                    Select the combined monthly income of your household or family.
+                                                    Select the combined monthly
+                                                    income of your household or
+                                                    family.
                                                 </p>
                                             </div>
 
@@ -831,40 +1069,52 @@ export default function PersonalDetails({
                                                             value={
                                                                 data.ethnic_affiliation
                                                             }
-                                                            onChange={(event) => {
+                                                            onChange={(
+                                                                event,
+                                                            ) => {
                                                                 setData(
                                                                     'ethnic_affiliation',
-                                                                    event.target.value
+                                                                    event.target
+                                                                        .value,
                                                                 );
 
                                                                 if (
-                                                                    event.target.value !==
+                                                                    event.target
+                                                                        .value !==
                                                                     'Other'
                                                                 ) {
                                                                     setData(
                                                                         'ethnic_affiliation_other',
-                                                                        ''
+                                                                        '',
                                                                     );
                                                                 }
                                                             }}
-                                                            className={inputClass}
+                                                            className={
+                                                                inputClass
+                                                            }
                                                         >
                                                             <option value="">
-                                                                Select ethnic affiliation
+                                                                Select ethnic
+                                                                affiliation
                                                             </option>
                                                             {ethnicAffiliations.map(
-                                                                (affiliation) => (
+                                                                (
+                                                                    affiliation,
+                                                                ) => (
                                                                     <option
-                                                                        key={affiliation}
-                                                                        value={affiliation}
+                                                                        key={
+                                                                            affiliation
+                                                                        }
+                                                                        value={
+                                                                            affiliation
+                                                                        }
                                                                     >
-                                                                        {affiliation}
+                                                                        {
+                                                                            affiliation
+                                                                        }
                                                                     </option>
-                                                                )
+                                                                ),
                                                             )}
-                                                            <option value="Other">
-                                                                Other
-                                                            </option>
                                                         </select>
 
                                                         {data.ethnic_affiliation ===
@@ -875,21 +1125,35 @@ export default function PersonalDetails({
                                                                     value={
                                                                         data.ethnic_affiliation_other
                                                                     }
-                                                                    onChange={(event) =>
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) =>
                                                                         setData(
                                                                             'ethnic_affiliation_other',
-                                                                            event.target.value
+                                                                            event
+                                                                                .target
+                                                                                .value,
                                                                         )
                                                                     }
-                                                                    className={inputClass}
+                                                                    className={
+                                                                        inputClass
+                                                                    }
                                                                     placeholder="Enter your ethnic affiliation"
-                                                                    maxLength={100}
+                                                                    maxLength={
+                                                                        100
+                                                                    }
                                                                 />
 
                                                                 {errors.ethnic_affiliation_other && (
                                                                     <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-red-600">
-                                                                        <AlertCircle size={15} />
-                                                                        {errors.ethnic_affiliation_other}
+                                                                        <AlertCircle
+                                                                            size={
+                                                                                15
+                                                                            }
+                                                                        />
+                                                                        {
+                                                                            errors.ethnic_affiliation_other
+                                                                        }
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -902,27 +1166,21 @@ export default function PersonalDetails({
                                             <div className="md:col-span-12">
                                                 <InlineChoice
                                                     label="Are you a member of an Indigenous Peoples Community of the Philippines?"
-                                                    value={
-                                                        data.is_indigenous
-                                                    }
+                                                    value={data.is_indigenous}
                                                     onChange={(value) => {
                                                         setData(
                                                             'is_indigenous',
-                                                            value
+                                                            value,
                                                         );
 
-                                                        if (
-                                                            value === '0'
-                                                        ) {
+                                                        if (value === '0') {
                                                             setData(
                                                                 'indigenous_community',
-                                                                ''
+                                                                '',
                                                             );
                                                         }
                                                     }}
-                                                    error={
-                                                        errors.is_indigenous
-                                                    }
+                                                    error={errors.is_indigenous}
                                                     required
                                                 />
                                             </div>
@@ -943,7 +1201,8 @@ export default function PersonalDetails({
                                                             onChange={(e) =>
                                                                 setData(
                                                                     'indigenous_community',
-                                                                    e.target.value
+                                                                    e.target
+                                                                        .value,
                                                                 )
                                                             }
                                                             className={
@@ -963,15 +1222,13 @@ export default function PersonalDetails({
                                                     onChange={(value) => {
                                                         setData(
                                                             'is_pwd',
-                                                            value
+                                                            value,
                                                         );
 
-                                                        if (
-                                                            value === '0'
-                                                        ) {
+                                                        if (value === '0') {
                                                             setData(
                                                                 'pwd_type',
-                                                                ''
+                                                                '',
                                                             );
                                                         }
                                                     }}
@@ -984,9 +1241,7 @@ export default function PersonalDetails({
                                                 <div className="md:col-span-12">
                                                     <CleanField
                                                         label="Type of Disability"
-                                                        error={
-                                                            errors.pwd_type
-                                                        }
+                                                        error={errors.pwd_type}
                                                     >
                                                         <input
                                                             type="text"
@@ -996,7 +1251,8 @@ export default function PersonalDetails({
                                                             onChange={(e) =>
                                                                 setData(
                                                                     'pwd_type',
-                                                                    e.target.value
+                                                                    e.target
+                                                                        .value,
                                                                 )
                                                             }
                                                             className={
@@ -1014,7 +1270,9 @@ export default function PersonalDetails({
                                     <div className="border-t border-gray-100 bg-gray-50/70 px-5 py-5 sm:px-7">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <p className="max-w-2xl text-sm leading-6 text-gray-500">
-                                                Your information will not be saved until you confirm it in the review window.
+                                                Your information will not be
+                                                saved until you confirm it in
+                                                the review window.
                                             </p>
 
                                             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -1034,8 +1292,7 @@ export default function PersonalDetails({
                                                     disabled={processing}
                                                     className="inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                                     style={{
-                                                        backgroundColor:
-                                                            maroon,
+                                                        backgroundColor: maroon,
                                                     }}
                                                 >
                                                     Review Information
@@ -1054,17 +1311,15 @@ export default function PersonalDetails({
                                     processing={processing}
                                     isEditing={Boolean(profile)}
                                     yesNo={yesNo}
-                                    onClose={() =>
-                                        setShowReview(false)
-                                    }
+                                    onClose={() => setShowReview(false)}
                                     onConfirm={confirmSubmission}
                                 />
                             )}
 
                             <div className="mt-10 border-t border-gray-200 pt-5">
                                 <p className="text-center text-xs text-gray-400 sm:text-left">
-                                    USeP School of Law Admission
-                                    Portal • Applicant
+                                    USeP School of Law Admission Portal •
+                                    Applicant
                                 </p>
                             </div>
                         </div>
@@ -1075,13 +1330,7 @@ export default function PersonalDetails({
     );
 }
 
-function SavedProfile({
-    profile,
-    email,
-    maroon,
-    yesNo,
-    onEdit,
-}) {
+function SavedProfile({ profile, email, maroon, yesNo, onEdit }) {
     return (
         <div className="space-y-6">
             <div className="overflow-hidden rounded-2xl border border-green-200 bg-white shadow-sm">
@@ -1102,20 +1351,19 @@ function SavedProfile({
                         </div>
 
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-green-700">
+                            <p className="text-xs font-bold tracking-widest text-green-700 uppercase">
                                 PROFILE COMPLETED
                             </p>
 
                             <h2 className="mt-1 text-xl font-bold text-gray-900">
                                 Personal Information Submitted
                             </h2>
-
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:items-end">
                         <div className="rounded-xl border border-green-200 bg-white px-4 py-3 sm:text-right">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            <p className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                                 Applicant Number
                             </p>
                             <p className="mt-1 text-lg font-bold text-green-700">
@@ -1142,36 +1390,31 @@ function SavedProfile({
                     >
                         <ProfileGrid>
                             <ProfileValue
-                                label="Full Name"
-                                value={profile.full_name}
-                                wide
+                                label="First Name"
+                                value={profile.first_name}
                             />
                             <ProfileValue
-                                label="Email Address"
-                                value={email}
+                                label="Middle Name"
+                                value={profile.middle_name || 'Not provided'}
                             />
+                            <ProfileValue
+                                label="Last Name"
+                                value={profile.last_name}
+                            />
+                            <ProfileValue label="Email Address" value={email} />
                             <ProfileValue
                                 label="Contact Number"
-                                value={
-                                    profile.contact_number
-                                }
+                                value={profile.contact_number}
                             />
                             <ProfileValue
                                 label="School Graduated"
-                                value={
-                                    profile.school_graduated
-                                }
+                                value={profile.school_graduated}
                             />
                             <ProfileValue
                                 label="Employment Status"
-                                value={
-                                    profile.employment_status
-                                }
+                                value={profile.employment_status}
                             />
-                            <ProfileValue
-                                label="Age"
-                                value={profile.age}
-                            />
+                            <ProfileValue label="Age" value={profile.age} />
                             <ProfileValue
                                 label="Gender"
                                 value={profile.gender}
@@ -1182,15 +1425,11 @@ function SavedProfile({
                             />
                             <ProfileValue
                                 label="Civil Status"
-                                value={
-                                    profile.civil_status
-                                }
+                                value={profile.civil_status}
                             />
                             <ProfileValue
                                 label="Present Address"
-                                value={
-                                    profile.present_address
-                                }
+                                value={profile.present_address}
                                 wide
                             />
                         </ProfileGrid>
@@ -1232,22 +1471,17 @@ function SavedProfile({
                             <ProfileValue
                                 label="Ethnic Affiliation"
                                 value={
-                                    profile.ethnic_affiliation ||
-                                    'Not provided'
+                                    profile.ethnic_affiliation || 'Not provided'
                                 }
                             />
                             <ProfileValue
                                 label="Member of Indigenous Peoples Community"
-                                value={yesNo(
-                                    profile.is_indigenous
-                                )}
+                                value={yesNo(profile.is_indigenous)}
                             />
                             <ProfileValue
                                 label="Indigenous Peoples Community"
                                 value={
-                                    Number(
-                                        profile.is_indigenous
-                                    ) === 1
+                                    Number(profile.is_indigenous) === 1
                                         ? profile.indigenous_community ||
                                           'Not specified'
                                         : 'Not applicable'
@@ -1255,18 +1489,13 @@ function SavedProfile({
                             />
                             <ProfileValue
                                 label="Person with Disability"
-                                value={yesNo(
-                                    profile.is_pwd
-                                )}
+                                value={yesNo(profile.is_pwd)}
                             />
                             <ProfileValue
                                 label="Type of Disability"
                                 value={
-                                    Number(
-                                        profile.is_pwd
-                                    ) === 1
-                                        ? profile.pwd_type ||
-                                          'Not specified'
+                                    Number(profile.is_pwd) === 1
+                                        ? profile.pwd_type || 'Not specified'
                                         : 'Not applicable'
                                 }
                             />
@@ -1274,7 +1503,6 @@ function SavedProfile({
                     </ProfileSection>
                 </div>
             </div>
-
         </div>
     );
 }
@@ -1289,10 +1517,9 @@ function PersonalInformationReview({
     onClose,
     onConfirm,
 }) {
-    const gender =
-        data.gender === 'Other'
-            ? data.gender_other
-            : data.gender;
+    const gender = data.gender === 'Other' ? data.gender_other : data.gender;
+    const religion =
+        data.religion === 'Other' ? data.religion_other : data.religion;
 
     return (
         <div
@@ -1304,7 +1531,7 @@ function PersonalInformationReview({
             <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-5 sm:px-7">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#922b2b]">
+                        <p className="text-xs font-bold tracking-widest text-[#922b2b] uppercase">
                             REVIEW BEFORE SAVING
                         </p>
                         <h2
@@ -1314,7 +1541,8 @@ function PersonalInformationReview({
                             Confirm Your Personal Information
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-gray-500">
-                            Check every detail carefully. Choose Back to Edit if something needs correction.
+                            Check every detail carefully. Choose Back to Edit if
+                            something needs correction.
                         </p>
                     </div>
 
@@ -1331,7 +1559,7 @@ function PersonalInformationReview({
 
                 <div className="overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
                     <div className="mb-5 flex flex-col items-center gap-3 text-center">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        <p className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                             Applicant Photo
                         </p>
                         <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
@@ -1350,16 +1578,44 @@ function PersonalInformationReview({
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <ReviewValue label="Full Name" value={data.full_name} wide />
+                        <ReviewValue
+                            label="First Name"
+                            value={data.first_name}
+                        />
+                        <ReviewValue
+                            label="Middle Name"
+                            value={data.middle_name || 'Not provided'}
+                        />
+                        <ReviewValue label="Last Name" value={data.last_name} />
                         <ReviewValue label="Email Address" value={email} />
-                        <ReviewValue label="Contact Number" value={data.contact_number} />
-                        <ReviewValue label="School Graduated" value={data.school_graduated} />
-                        <ReviewValue label="Employment Status" value={data.employment_status} />
+                        <ReviewValue
+                            label="Contact Number"
+                            value={data.contact_number}
+                        />
+                        <ReviewValue
+                            label="School Graduated"
+                            value={
+                                data.school_graduated === '__other__'
+                                    ? data.school_graduated_other
+                                    : data.school_graduated
+                            }
+                        />
+                        <ReviewValue
+                            label="Employment Status"
+                            value={data.employment_status}
+                        />
                         <ReviewValue label="Age" value={data.age} />
                         <ReviewValue label="Gender" value={gender} />
-                        <ReviewValue label="Religion" value={data.religion} />
-                        <ReviewValue label="Civil Status" value={data.civil_status} />
-                        <ReviewValue label="Present Address" value={data.present_address} wide />
+                        <ReviewValue label="Religion" value={religion} />
+                        <ReviewValue
+                            label="Civil Status"
+                            value={data.civil_status}
+                        />
+                        <ReviewValue
+                            label="Present Address"
+                            value={data.present_address}
+                            wide
+                        />
                         <ReviewValue
                             label="Individual Gross Monthly Income"
                             value={data.individual_income_range}
@@ -1376,15 +1632,30 @@ function PersonalInformationReview({
                                     : data.ethnic_affiliation
                             }
                         />
-                        <ReviewValue label="Indigenous Peoples Community Member" value={yesNo(data.is_indigenous)} />
+                        <ReviewValue
+                            label="Indigenous Peoples Community Member"
+                            value={yesNo(data.is_indigenous)}
+                        />
                         <ReviewValue
                             label="Indigenous Peoples Community"
-                            value={data.is_indigenous === '1' ? data.indigenous_community || 'Not specified' : 'Not applicable'}
+                            value={
+                                data.is_indigenous === '1'
+                                    ? data.indigenous_community ||
+                                      'Not specified'
+                                    : 'Not applicable'
+                            }
                         />
-                        <ReviewValue label="Person with Disability" value={yesNo(data.is_pwd)} />
+                        <ReviewValue
+                            label="Person with Disability"
+                            value={yesNo(data.is_pwd)}
+                        />
                         <ReviewValue
                             label="Type of Disability"
-                            value={data.is_pwd === '1' ? data.pwd_type || 'Not specified' : 'Not applicable'}
+                            value={
+                                data.is_pwd === '1'
+                                    ? data.pwd_type || 'Not specified'
+                                    : 'Not applicable'
+                            }
                         />
                     </div>
                 </div>
@@ -1418,6 +1689,116 @@ function PersonalInformationReview({
     );
 }
 
+function SchoolSearchSelect({ schools, value, onChange, className }) {
+    const selectedLabel = value === '__other__' ? 'Other' : value;
+    const [query, setQuery] = useState(selectedLabel);
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (!open) {
+            setQuery(selectedLabel);
+        }
+    }, [open, selectedLabel]);
+
+    const matches = useMemo(() => {
+        const search = query.trim().toLocaleLowerCase();
+
+        return schools.filter((school) => {
+            if (!search) {
+                return true;
+            }
+
+            return (
+                school.name.toLocaleLowerCase().includes(search) ||
+                school.region.toLocaleLowerCase().includes(search)
+            );
+        });
+    }, [query, schools]);
+
+    const selectSchool = (schoolName) => {
+        onChange(schoolName);
+        setQuery(schoolName === '__other__' ? 'Other' : schoolName);
+        setOpen(false);
+    };
+
+    return (
+        <div
+            className="relative"
+            onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                    setOpen(false);
+                }
+            }}
+        >
+            <Search
+                size={17}
+                className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-gray-400"
+            />
+            <input
+                type="search"
+                role="combobox"
+                aria-expanded={open}
+                aria-controls="school-search-results"
+                aria-autocomplete="list"
+                value={query}
+                onFocus={() => setOpen(true)}
+                onChange={(event) => {
+                    setQuery(event.target.value);
+                    onChange('');
+                    setOpen(true);
+                }}
+                className={className + ' pl-11'}
+                placeholder="Search college or university"
+                autoComplete="off"
+            />
+
+            {open && (
+                <div
+                    id="school-search-results"
+                    role="listbox"
+                    className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl"
+                >
+                    {matches.length > 0 ? (
+                        matches.map((school) => (
+                            <button
+                                key={school.name + school.region}
+                                type="button"
+                                role="option"
+                                aria-selected={value === school.name}
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => selectSchool(school.name)}
+                                className="block w-full rounded-lg px-3 py-2.5 text-left transition hover:bg-[#922b2b]/5"
+                            >
+                                <span className="block text-sm font-semibold text-gray-900">
+                                    {school.name}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-gray-500">
+                                    {school.region}
+                                </span>
+                            </button>
+                        ))
+                    ) : (
+                        <p className="px-3 py-4 text-center text-sm text-gray-500">
+                            No matching school found.
+                        </p>
+                    )}
+
+                    <button
+                        type="button"
+                        role="option"
+                        aria-selected={value === '__other__'}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectSchool('__other__')}
+                        className="mt-1 block w-full rounded-lg border-t border-gray-100 px-3 py-3 text-left text-sm font-semibold text-[#922b2b] transition hover:bg-[#922b2b]/5"
+                    >
+                        Other
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ReviewValue({ label, value, wide = false }) {
     return (
         <div
@@ -1425,10 +1806,10 @@ function ReviewValue({ label, value, wide = false }) {
                 wide ? 'sm:col-span-2 lg:col-span-3' : ''
             }`}
         >
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                 {label}
             </p>
-            <p className="mt-1 break-words font-semibold text-gray-900">
+            <p className="mt-1 font-semibold break-words text-gray-900">
                 {value === '' || value === null || value === undefined
                     ? 'Not provided'
                     : value}
@@ -1437,12 +1818,7 @@ function ReviewValue({ label, value, wide = false }) {
     );
 }
 
-function ProfileSection({
-    title,
-    icon: Icon,
-    maroon,
-    children,
-}) {
+function ProfileSection({ title, icon: Icon, maroon, children }) {
     return (
         <section>
             <div className="mb-5 flex items-center gap-3">
@@ -1456,9 +1832,7 @@ function ProfileSection({
                     <Icon size={20} />
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900">
-                    {title}
-                </h3>
+                <h3 className="text-lg font-bold text-gray-900">{title}</h3>
             </div>
 
             {children}
@@ -1474,45 +1848,30 @@ function ProfileGrid({ children }) {
     );
 }
 
-function ProfileValue({
-    label,
-    value,
-    wide = false,
-}) {
+function ProfileValue({ label, value, wide = false }) {
     return (
         <div
             className={`rounded-xl border border-gray-100 bg-gray-50 p-4 ${
-                wide
-                    ? 'sm:col-span-2 lg:col-span-3'
-                    : ''
+                wide ? 'sm:col-span-2 lg:col-span-3' : ''
             }`}
         >
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                 {label}
             </p>
-            <p className="mt-1 break-words font-semibold text-gray-900">
+            <p className="mt-1 font-semibold break-words text-gray-900">
                 {value ?? 'Not provided'}
             </p>
         </div>
     );
 }
 
-function CleanField({
-    label,
-    error,
-    children,
-    required = false,
-}) {
+function CleanField({ label, error, children, required = false }) {
     return (
         <div>
             <label className="mb-2 block text-sm font-semibold text-gray-800">
                 {label}
 
-                {required && (
-                    <span className="ml-1 text-red-500">
-                        *
-                    </span>
-                )}
+                {required && <span className="ml-1 text-red-500">*</span>}
             </label>
 
             {children}
@@ -1527,13 +1886,7 @@ function CleanField({
     );
 }
 
-function InlineChoice({
-    label,
-    value,
-    onChange,
-    error,
-    required = false,
-}) {
+function InlineChoice({ label, value, onChange, error, required = false }) {
     return (
         <div
             className={`rounded-xl border p-4 sm:p-5 ${
@@ -1543,14 +1896,10 @@ function InlineChoice({
             }`}
         >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <p className="max-w-2xl text-sm font-semibold leading-6 text-gray-800">
+                <p className="max-w-2xl text-sm leading-6 font-semibold text-gray-800">
                     {label}
 
-                    {required && (
-                        <span className="ml-1 text-red-500">
-                            *
-                        </span>
-                    )}
+                    {required && <span className="ml-1 text-red-500">*</span>}
                 </p>
 
                 <div className="grid w-full grid-cols-2 gap-2 lg:w-52">
@@ -1578,11 +1927,7 @@ function InlineChoice({
     );
 }
 
-function ChoiceOption({
-    label,
-    selected,
-    onClick,
-}) {
+function ChoiceOption({ label, selected, onClick }) {
     return (
         <button
             type="button"

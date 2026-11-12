@@ -1,18 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdmissionProgramController;
+use App\Http\Controllers\AdmissionRequirementController;
 use App\Http\Controllers\ApplicantProfileController;
 use App\Http\Controllers\ApplicantProgramController;
+use App\Http\Controllers\ApplicantReportController;
 use App\Http\Controllers\ApplicantRequirementController;
 use App\Http\Controllers\ApplicantStatusController;
+use App\Http\Controllers\EmailOtpVerificationController;
 use App\Http\Controllers\ExaminationScheduleController;
 use App\Http\Controllers\ExamineeController;
 use App\Http\Controllers\IntervieweeController;
 use App\Http\Controllers\InterviewerController;
-
+use App\Http\Controllers\ProfileOptionController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +27,16 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/email/otp', [EmailOtpVerificationController::class, 'show'])
+        ->name('otp.verification.notice');
+    Route::post('/email/otp/verify', [EmailOtpVerificationController::class, 'verify'])
+        ->middleware('throttle:10,1')
+        ->name('otp.verification.verify');
+    Route::post('/email/otp/resend', [EmailOtpVerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('otp.verification.resend');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +46,7 @@ Route::get('/', function () {
 
 Route::middleware([
     'auth',
-    'verified'
+    'otp.verified',
 ])->group(function () {
 
     /*
@@ -82,7 +95,6 @@ Route::middleware([
                 ->name('interviewer.requirement.view');
         });
 
-
     /*
     |--------------------------------------------------------------------------
     | Applicant Dashboard
@@ -101,7 +113,6 @@ Route::middleware([
         'applicant.dashboard'
     );
 
-
     /*
     |--------------------------------------------------------------------------
     | Applicant Personal Details
@@ -112,18 +123,17 @@ Route::middleware([
         '/personal-details',
         [
             ApplicantProfileController::class,
-            'create'
+            'create',
         ]
     )->name(
         'personal.details'
     );
 
-
     Route::post(
         '/personal-details',
         [
             ApplicantProfileController::class,
-            'store'
+            'store',
         ]
     )->name(
         'personal.details.store'
@@ -133,7 +143,7 @@ Route::middleware([
         '/personal-details',
         [
             ApplicantProfileController::class,
-            'update'
+            'update',
         ]
     )->name(
         'personal.details.update'
@@ -143,12 +153,11 @@ Route::middleware([
         '/personal-details/update',
         [
             ApplicantProfileController::class,
-            'update'
+            'update',
         ]
     )->name(
         'personal.details.update-with-photo'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -160,23 +169,21 @@ Route::middleware([
         '/applicant/program',
         [
             ApplicantProgramController::class,
-            'index'
+            'index',
         ]
     )->name(
         'applicant.program'
     );
 
-
     Route::post(
         '/applicant/program',
         [
             ApplicantProgramController::class,
-            'store'
+            'store',
         ]
     )->name(
         'applicant.program.store'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -188,12 +195,21 @@ Route::middleware([
         '/applicant/requirements',
         [
             ApplicantRequirementController::class,
-            'index'
+            'index',
         ]
     )->name(
         'applicant.requirements'
     );
 
+    Route::get(
+        '/applicant/requirements/review',
+        [
+            ApplicantRequirementController::class,
+            'review',
+        ]
+    )->name(
+        'applicant.requirements.review'
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -205,7 +221,7 @@ Route::middleware([
         '/applicant/requirements/{requirementId}/upload',
         [
             ApplicantRequirementController::class,
-            'upload'
+            'upload',
         ]
     )->name(
         'applicant.requirements.upload'
@@ -215,12 +231,11 @@ Route::middleware([
         '/applicant/requirements/{requirementId}',
         [
             ApplicantRequirementController::class,
-            'remove'
+            'remove',
         ]
     )->name(
         'applicant.requirements.remove'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -232,12 +247,11 @@ Route::middleware([
         '/applicant/requirements/submit',
         [
             ApplicantRequirementController::class,
-            'submit'
+            'submit',
         ]
     )->name(
         'applicant.requirements.submit'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -249,12 +263,11 @@ Route::middleware([
         '/applicant/examination',
         [
             ExaminationScheduleController::class,
-            'applicantIndex'
+            'applicantIndex',
         ]
     )->name(
         'applicant.examination'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -266,12 +279,11 @@ Route::middleware([
         '/applicant/examination/{scheduleId}/select',
         [
             ExaminationScheduleController::class,
-            'applicantSelect'
+            'applicantSelect',
         ]
     )->name(
         'applicant.examination.select'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -283,12 +295,11 @@ Route::middleware([
         '/applicant/status',
         [
             ApplicantStatusController::class,
-            'index'
+            'index',
         ]
     )->name(
         'applicant.status'
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -297,11 +308,10 @@ Route::middleware([
     */
 
     Route::middleware([
-        'admin'
+        'admin',
     ])
         ->prefix('admin')
         ->group(function () {
-
 
             /*
             |--------------------------------------------------------------------------
@@ -313,12 +323,11 @@ Route::middleware([
                 '/dashboard',
                 [
                     AdminController::class,
-                    'dashboard'
+                    'dashboard',
                 ]
             )->name(
                 'admin.dashboard'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -330,12 +339,55 @@ Route::middleware([
                 '/applications',
                 [
                     AdminController::class,
-                    'applications'
+                    'applications',
                 ]
             )->name(
                 'admin.applications'
             );
 
+            Route::get('/reports', [ApplicantReportController::class, 'index'])
+                ->name('admin.reports');
+            Route::get('/reports/pdf', [ApplicantReportController::class, 'download'])
+                ->name('admin.reports.pdf');
+
+            Route::get('/form-options', [ProfileOptionController::class, 'index'])
+                ->name('admin.form-options');
+            Route::post('/form-options', [ProfileOptionController::class, 'store'])
+                ->name('admin.form-options.store');
+            Route::put('/form-options/{profileOption}', [ProfileOptionController::class, 'update'])
+                ->name('admin.form-options.update');
+            Route::patch('/form-options/{profileOption}/toggle', [ProfileOptionController::class, 'toggle'])
+                ->name('admin.form-options.toggle');
+            Route::delete('/form-options/{profileOption}', [ProfileOptionController::class, 'destroy'])
+                ->name('admin.form-options.destroy');
+            Route::post('/form-options/{profileOption}/move', [ProfileOptionController::class, 'move'])
+                ->name('admin.form-options.move');
+
+            Route::get('/programs', [AdmissionProgramController::class, 'index'])
+                ->name('admin.programs');
+            Route::post('/programs', [AdmissionProgramController::class, 'store'])
+                ->name('admin.programs.store');
+            Route::put('/programs/{admissionProgram}', [AdmissionProgramController::class, 'update'])
+                ->name('admin.programs.update');
+            Route::patch('/programs/{admissionProgram}/toggle', [AdmissionProgramController::class, 'toggle'])
+                ->name('admin.programs.toggle');
+            Route::delete('/programs/{admissionProgram}', [AdmissionProgramController::class, 'destroy'])
+                ->name('admin.programs.destroy');
+            Route::post('/programs/{admissionProgram}/move', [AdmissionProgramController::class, 'move'])
+                ->name('admin.programs.move');
+
+            Route::get('/admission-requirements', [AdmissionRequirementController::class, 'index'])
+                ->name('admin.admission-requirements');
+            Route::post('/admission-requirements', [AdmissionRequirementController::class, 'store'])
+                ->name('admin.admission-requirements.store');
+            Route::put('/admission-requirements/{requirement}', [AdmissionRequirementController::class, 'update'])
+                ->name('admin.admission-requirements.update');
+            Route::patch('/admission-requirements/{requirement}/toggle', [AdmissionRequirementController::class, 'toggle'])
+                ->name('admin.admission-requirements.toggle');
+            Route::delete('/admission-requirements/{requirement}', [AdmissionRequirementController::class, 'destroy'])
+                ->name('admin.admission-requirements.destroy');
+            Route::post('/admission-requirements/{requirement}/move', [AdmissionRequirementController::class, 'move'])
+                ->name('admin.admission-requirements.move');
 
             /*
             |--------------------------------------------------------------------------
@@ -347,12 +399,11 @@ Route::middleware([
                 '/applications/{applicationId}',
                 [
                     AdminController::class,
-                    'applicationDetails'
+                    'applicationDetails',
                 ]
             )->name(
                 'admin.application.details'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -369,12 +420,11 @@ Route::middleware([
                 '/requirements/{submissionId}/download',
                 [
                     AdminController::class,
-                    'downloadRequirement'
+                    'downloadRequirement',
                 ]
             )->name(
                 'admin.requirement.download'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -386,12 +436,11 @@ Route::middleware([
                 '/applications/{applicationId}/status',
                 [
                     AdminController::class,
-                    'updateApplicationStatus'
+                    'updateApplicationStatus',
                 ]
             )->name(
                 'admin.application.status'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -403,12 +452,11 @@ Route::middleware([
                 '/applications/{applicationId}/requirements/{submissionId}/verify',
                 [
                     AdminController::class,
-                    'verifyRequirement'
+                    'verifyRequirement',
                 ]
             )->name(
                 'admin.requirement.verify'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -424,12 +472,11 @@ Route::middleware([
                 '/examinees',
                 [
                     ExamineeController::class,
-                    'index'
+                    'index',
                 ]
             )->name(
                 'admin.examinees'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -451,12 +498,11 @@ Route::middleware([
                 '/examinees/{applicationId}/pass',
                 [
                     ExamineeController::class,
-                    'pass'
+                    'pass',
                 ]
             )->name(
                 'admin.examinees.pass'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -471,12 +517,11 @@ Route::middleware([
                 '/examinees/{applicationId}/fail',
                 [
                     ExamineeController::class,
-                    'fail'
+                    'fail',
                 ]
             )->name(
                 'admin.examinees.fail'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -494,12 +539,11 @@ Route::middleware([
                 '/interviewees',
                 [
                     IntervieweeController::class,
-                    'index'
+                    'index',
                 ]
             )->name(
                 'admin.interviewees'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -511,12 +555,11 @@ Route::middleware([
                 '/interviewees/{applicationId}/pass',
                 [
                     IntervieweeController::class,
-                    'pass'
+                    'pass',
                 ]
             )->name(
                 'admin.interviewees.pass'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -528,7 +571,7 @@ Route::middleware([
                 '/interviewees/{applicationId}/fail',
                 [
                     IntervieweeController::class,
-                    'fail'
+                    'fail',
                 ]
             )->name(
                 'admin.interviewees.fail'
@@ -538,7 +581,7 @@ Route::middleware([
                 '/interviewees/{applicationId}/waitlist',
                 [
                     IntervieweeController::class,
-                    'waitlist'
+                    'waitlist',
                 ]
             )->name(
                 'admin.interviewees.waitlist'
@@ -548,12 +591,11 @@ Route::middleware([
                 '/waitlisted',
                 [
                     IntervieweeController::class,
-                    'waitlisted'
+                    'waitlisted',
                 ]
             )->name(
                 'admin.waitlisted'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -565,12 +607,11 @@ Route::middleware([
                 '/interviewees/{applicationId}/retry-email',
                 [
                     IntervieweeController::class,
-                    'retryEmail'
+                    'retryEmail',
                 ]
             )->name(
                 'admin.interviewees.retry-email'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -582,12 +623,11 @@ Route::middleware([
                 '/final-list',
                 [
                     IntervieweeController::class,
-                    'finalList'
+                    'finalList',
                 ]
             )->name(
                 'admin.final-list'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -603,12 +643,11 @@ Route::middleware([
                 '/final-list/pdf',
                 [
                     IntervieweeController::class,
-                    'downloadFinalListPdf'
+                    'downloadFinalListPdf',
                 ]
             )->name(
                 'admin.final-list.pdf'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -620,12 +659,11 @@ Route::middleware([
                 '/examination-schedules',
                 [
                     ExaminationScheduleController::class,
-                    'index'
+                    'index',
                 ]
             )->name(
                 'admin.examination.schedules'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -637,12 +675,11 @@ Route::middleware([
                 '/examination-schedules/create',
                 [
                     ExaminationScheduleController::class,
-                    'create'
+                    'create',
                 ]
             )->name(
                 'admin.examination.schedules.create'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -654,12 +691,11 @@ Route::middleware([
                 '/examination-schedules',
                 [
                     ExaminationScheduleController::class,
-                    'store'
+                    'store',
                 ]
             )->name(
                 'admin.examination.schedules.store'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -671,12 +707,11 @@ Route::middleware([
                 '/examination-schedules/{scheduleId}/edit',
                 [
                     ExaminationScheduleController::class,
-                    'edit'
+                    'edit',
                 ]
             )->name(
                 'admin.examination.schedules.edit'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -688,12 +723,11 @@ Route::middleware([
                 '/examination-schedules/{scheduleId}',
                 [
                     ExaminationScheduleController::class,
-                    'update'
+                    'update',
                 ]
             )->name(
                 'admin.examination.schedules.update'
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -705,7 +739,7 @@ Route::middleware([
                 '/examination-schedules/{scheduleId}',
                 [
                     ExaminationScheduleController::class,
-                    'destroy'
+                    'destroy',
                 ]
             )->name(
                 'admin.examination.schedules.destroy'
@@ -714,7 +748,6 @@ Route::middleware([
         });
 
 });
-
 
 /*
 |--------------------------------------------------------------------------

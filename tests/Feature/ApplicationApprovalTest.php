@@ -2,7 +2,9 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -23,10 +25,10 @@ beforeEach(function () {
         'application_status' => 'Under Review', 'remarks' => 'Original remarks',
     ]);
     DB::table('requirements')->insert([
-        ['requirement_id' => 1, 'requirement_name' => 'Common document', 'program' => 'Both', 'is_required' => 1],
+        ['requirement_id' => 1, 'requirement_name' => 'Common document', 'program' => 'Juris Doctor [Thesis] (JD)', 'is_required' => 1],
         ['requirement_id' => 2, 'requirement_name' => 'Law document', 'program' => 'Juris Doctor [Thesis] (JD)', 'is_required' => 1],
         ['requirement_id' => 3, 'requirement_name' => 'Other program document', 'program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)', 'is_required' => 1],
-        ['requirement_id' => 4, 'requirement_name' => 'Optional document', 'program' => 'Both', 'is_required' => 0],
+        ['requirement_id' => 4, 'requirement_name' => 'Optional document', 'program' => 'Juris Doctor [Thesis] (JD)', 'is_required' => 0],
     ]);
 });
 
@@ -38,6 +40,35 @@ function approvalTestDocument(int $requirementId, string $status): void
         'file_size' => 100, 'verification_status' => $status,
     ]);
 }
+
+it('checks the latest uploaded documents before opening the submission review', function () {
+    DB::table('applications')->where('application_id', 1)->update([
+        'application_status' => 'Pending',
+    ]);
+    $applicant = User::findOrFail(
+        DB::table('applicant_profiles')->where('id', 1)->value('user_id')
+    );
+    $this->actingAs($applicant);
+
+    approvalTestDocument(1, 'Pending');
+
+    $this->getJson('/applicant/requirements/review')
+        ->assertOk()
+        ->assertJson([
+            'ready' => false,
+            'message' => 'Please upload all required documents before submitting your application.',
+        ]);
+
+    approvalTestDocument(2, 'Pending');
+
+    $this->getJson('/applicant/requirements/review')
+        ->assertOk()
+        ->assertJson([
+            'ready' => true,
+            'message' => null,
+        ])
+        ->assertJsonCount(2, 'submissions');
+});
 
 it('rejects approval when a required document needs attention', function ($status) {
     approvalTestDocument(1, 'Approved');
@@ -83,18 +114,18 @@ it('locks applicant mutations after approval or completion', function ($status) 
     DB::table('applications')->where('application_id', 1)->update(['application_status' => $status]);
     $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
     $this->actingAs($applicant);
-    Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
     $this->post('/applicant/program', ['program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)'])
         ->assertSessionHasErrors('program');
     $this->post('/applicant/requirements/1/upload', [
-        'file' => Illuminate\Http\UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
+        'file' => UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
     ])->assertSessionHasErrors('file');
     $this->post('/applicant/requirements/submit')->assertSessionHasErrors('application');
     $this->assertDatabaseHas('applications', [
         'application_id' => 1, 'application_status' => $status, 'program' => 'Juris Doctor [Thesis] (JD)',
     ]);
     $this->assertDatabaseCount('requirement_submissions', 0);
-    expect(Illuminate\Support\Facades\Storage::disk('public')->allFiles())->toBe([]);
+    expect(Storage::disk('public')->allFiles())->toBe([]);
 })->with(['Approved', 'Completed']);
 
 it('lets staff reopen an unbooked application for applicant corrections', function () {
@@ -104,17 +135,17 @@ it('lets staff reopen an unbooked application for applicant corrections', functi
     $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
     $this->actingAs($applicant);
     $this->post('/applicant/program', ['program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)'])->assertSessionHasNoErrors();
-    Illuminate\Support\Facades\Storage::fake('public');
-    $this->post('/applicant/requirements/1/upload', [
-        'file' => Illuminate\Http\UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
+    Storage::fake('public');
+    $this->post('/applicant/requirements/3/upload', [
+        'file' => UploadedFile::fake()->create('document.pdf', 20, 'application/pdf'),
     ])->assertSessionHasNoErrors();
     $this->assertDatabaseHas('applications', ['application_id' => 1, 'application_status' => 'Under Review', 'program' => 'Master of Legal Studies-Juris Doctor (MLS-JD)']);
-    $this->assertDatabaseHas('requirement_submissions', ['application_id' => 1, 'requirement_id' => 1, 'verification_status' => 'Pending']);
+    $this->assertDatabaseHas('requirement_submissions', ['application_id' => 1, 'requirement_id' => 3, 'verification_status' => 'Pending']);
 });
 
 it('lets an applicant remove a submitted document and upload a replacement', function () {
-    Illuminate\Support\Facades\Storage::fake('public');
-    Illuminate\Support\Facades\Storage::disk('public')->put('requirements/1/original.pdf', 'original');
+    Storage::fake('public');
+    Storage::disk('public')->put('requirements/1/original.pdf', 'original');
     approvalTestDocument(1, 'Approved');
     DB::table('requirement_submissions')->where('application_id', 1)->where('requirement_id', 1)->update([
         'file_path' => 'requirements/1/original.pdf',
@@ -124,7 +155,7 @@ it('lets an applicant remove a submitted document and upload a replacement', fun
     $this->actingAs($applicant);
 
     $this->post('/applicant/requirements/1/upload', [
-        'file' => Illuminate\Http\UploadedFile::fake()->create('another.pdf', 20, 'application/pdf'),
+        'file' => UploadedFile::fake()->create('another.pdf', 20, 'application/pdf'),
     ])->assertSessionHasErrors('file');
     $this->assertDatabaseHas('requirement_submissions', [
         'application_id' => 1,
@@ -140,10 +171,10 @@ it('lets an applicant remove a submitted document and upload a replacement', fun
         'application_id' => 1,
         'requirement_id' => 1,
     ]);
-    Illuminate\Support\Facades\Storage::disk('public')->assertMissing('requirements/1/original.pdf');
+    Storage::disk('public')->assertMissing('requirements/1/original.pdf');
 
     $this->post('/applicant/requirements/1/upload', [
-        'file' => Illuminate\Http\UploadedFile::fake()->create('replacement.pdf', 20, 'application/pdf'),
+        'file' => UploadedFile::fake()->create('replacement.pdf', 20, 'application/pdf'),
     ])->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('requirement_submissions', [
@@ -155,24 +186,24 @@ it('lets an applicant remove a submitted document and upload a replacement', fun
 });
 
 it('accepts only PDF requirement documents', function () {
-    Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
     $applicant = User::findOrFail(DB::table('applicant_profiles')->where('id', 1)->value('user_id'));
     $this->actingAs($applicant);
 
     $this->post('/applicant/requirements/1/upload', [
-        'file' => Illuminate\Http\UploadedFile::fake()->create('document.jpg', 20, 'image/jpeg'),
+        'file' => UploadedFile::fake()->create('document.jpg', 20, 'image/jpeg'),
     ])->assertSessionHasErrors('file');
 
     $this->assertDatabaseMissing('requirement_submissions', [
         'application_id' => 1,
         'requirement_id' => 1,
     ]);
-    expect(Illuminate\Support\Facades\Storage::disk('public')->allFiles())->toBe([]);
+    expect(Storage::disk('public')->allFiles())->toBe([]);
 });
 
 it('does not let an applicant remove a document from a locked application', function () {
-    Illuminate\Support\Facades\Storage::fake('public');
-    Illuminate\Support\Facades\Storage::disk('public')->put('requirements/1/approved.pdf', 'approved');
+    Storage::fake('public');
+    Storage::disk('public')->put('requirements/1/approved.pdf', 'approved');
     approvalTestDocument(1, 'Approved');
     DB::table('requirement_submissions')->where('application_id', 1)->where('requirement_id', 1)->update([
         'file_path' => 'requirements/1/approved.pdf',
@@ -188,7 +219,7 @@ it('does not let an applicant remove a document from a locked application', func
         'application_id' => 1,
         'requirement_id' => 1,
     ]);
-    Illuminate\Support\Facades\Storage::disk('public')->assertExists('requirements/1/approved.pdf');
+    Storage::disk('public')->assertExists('requirements/1/approved.pdf');
 });
 
 it('blocks reopening booked applications through any editable status', function ($status) {

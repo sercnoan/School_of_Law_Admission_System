@@ -433,10 +433,10 @@ export default function FinalList({
                                 mb-6
                                 rounded-2xl
                                 border
-                                border-gray-100
+                                border-gray-300
                                 bg-white
                                 p-5
-                                shadow-sm
+                                shadow-md
                                 sm:p-6
                             "
                         >
@@ -593,9 +593,9 @@ export default function FinalList({
                                 overflow-hidden
                                 rounded-2xl
                                 border
-                                border-gray-100
+                                border-gray-300
                                 bg-white
-                                shadow-sm
+                                shadow-md
                                 lg:block
                             "
                         >
@@ -606,7 +606,7 @@ export default function FinalList({
 
                                     <thead>
 
-                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                        <tr className="border-b-2 border-gray-400 bg-gray-100">
 
                                             <TableHeader>
                                                 Applicant
@@ -641,7 +641,7 @@ export default function FinalList({
                                     </thead>
 
 
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y-[3px] divide-gray-300">
 
                                         {filteredFinalists.length >
                                         0 ? (
@@ -657,11 +657,13 @@ export default function FinalList({
                                                         }
                                                         className="
                                                             transition
-                                                            hover:bg-gray-50
+                                                            odd:bg-white
+                                                            even:bg-gray-50/70
+                                                            hover:bg-green-50/60
                                                         "
                                                     >
 
-                                                        <td className="px-5 py-5">
+                                                        <td className="border-l-[6px] border-l-green-600 px-5 py-5">
 
                                                             <p className="font-semibold text-gray-900">
                                                                 {
@@ -883,10 +885,14 @@ export default function FinalList({
                                             className="
                                                 rounded-2xl
                                                 border
-                                                border-gray-100
+                                                border-gray-300
+                                                border-l-[6px]
+                                                border-l-green-600
                                                 bg-white
                                                 p-5
-                                                shadow-sm
+                                                shadow-md
+                                                transition
+                                                hover:shadow-lg
                                             "
                                         >
 

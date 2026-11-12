@@ -186,7 +186,7 @@ export default function Dashboard({
                                     <div>
 
                                         <p className="text-sm font-medium text-gray-500">
-                                            Approved Applications
+                                            Processed Applications
                                         </p>
 
                                         <p className="mt-2 text-3xl font-bold text-green-700">

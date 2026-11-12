@@ -512,11 +512,11 @@ export default function Examinees({ examinees = [], academicYears = [] }) {
 
                         {/* DESKTOP TABLE */}
 
-                        <div className="hidden overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:block">
+                        <div className="hidden overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-md lg:block">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                        <tr className="border-b-2 border-gray-400 bg-gray-100">
                                             <TableHeader>Examinee</TableHeader>
 
                                             <TableHeader>
@@ -539,7 +539,7 @@ export default function Examinees({ examinees = [], academicYears = [] }) {
                                         </tr>
                                     </thead>
 
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y-[3px] divide-gray-300">
                                         {filteredExaminees.length > 0 ? (
                                             pagination.pageRecords.map(
                                                 (examinee) => (
@@ -547,9 +547,9 @@ export default function Examinees({ examinees = [], academicYears = [] }) {
                                                         key={
                                                             examinee.application_id
                                                         }
-                                                        className="hover:bg-gray-50"
+                                                        className="transition odd:bg-white even:bg-gray-50/70 hover:bg-[#fbf3f3]"
                                                     >
-                                                        <td className="px-5 py-5">
+                                                        <td className="border-l-[6px] border-l-[#922b2b] px-5 py-5">
                                                             <p className="font-semibold text-gray-900">
                                                                 {
                                                                     examinee.full_name
@@ -708,7 +708,7 @@ export default function Examinees({ examinees = [], academicYears = [] }) {
                             {pagination.pageRecords.map((examinee) => (
                                 <div
                                     key={examinee.application_id}
-                                    className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                                    className="rounded-2xl border border-gray-300 border-l-[6px] border-l-[#922b2b] bg-white p-5 shadow-md transition hover:shadow-lg"
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div>

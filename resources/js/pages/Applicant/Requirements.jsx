@@ -6,9 +6,9 @@ import {
     usePage,
 } from '@inertiajs/react';
 
-import { LayoutDashboard, User, FileText, GraduationCap, Upload, CheckCircle, XCircle, Clock, Eye, RefreshCw, AlertCircle, ArrowLeft, CalendarDays, ClipboardList, Trash2, X } from 'lucide-react';
+import { LayoutDashboard, User, FileText, GraduationCap, Upload, Download, CheckCircle, XCircle, Clock, Eye, RefreshCw, AlertCircle, ArrowLeft, CalendarDays, ClipboardList, Trash2, X } from 'lucide-react';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 
 export default function Requirements({
@@ -32,12 +32,25 @@ export default function Requirements({
     const [submitting, setSubmitting] =
         useState(false);
 
+    const [checkingReview, setCheckingReview] =
+        useState(false);
+
+    const [submissionError, setSubmissionError] =
+        useState('');
+
+    const [currentSubmissions, setCurrentSubmissions] =
+        useState(submissions);
+
     const [errors, setErrors] =
         useState({});
 
 
     const maroon = '#922b2b';
     const darkMaroon = '#691f1f';
+
+    useEffect(() => {
+        setCurrentSubmissions(submissions);
+    }, [submissions]);
 
 
     /*
@@ -49,7 +62,7 @@ export default function Requirements({
     const getSubmission = (
         requirementId
     ) => {
-        return submissions.find(
+        return currentSubmissions.find(
             (submission) =>
                 Number(
                     submission.requirement_id
@@ -91,6 +104,15 @@ export default function Requirements({
                             error.file ||
                             'Unable to remove the file.',
                     }));
+                },
+                onSuccess: () => {
+                    setCurrentSubmissions((previous) =>
+                        previous.filter(
+                            (submission) =>
+                                Number(submission.requirement_id) !==
+                                Number(requirementId),
+                        ),
+                    );
                 },
                 onFinish: () => {
                     setRemoving(null);
@@ -214,7 +236,7 @@ export default function Requirements({
         requirementId,
         file
     ) => {
-        if (!file || isLocked) {
+        if (!file || isLocked || uploading !== null) {
             return;
         }
 
@@ -239,6 +261,40 @@ export default function Requirements({
             {
                 forceFormData: true,
                 preserveScroll: true,
+
+                onSuccess: (page) => {
+                    const serverSubmissions = Array.isArray(
+                        page.props.submissions,
+                    )
+                        ? page.props.submissions
+                        : [];
+                    const uploadedSubmission = {
+                        requirement_id: requirementId,
+                        file_name: file.name,
+                        file_size: file.size,
+                        file_type: file.type || 'application/pdf',
+                        verification_status: 'Pending',
+                        remarks: null,
+                    };
+
+                    setCurrentSubmissions(() => {
+                        const withoutCurrent = serverSubmissions.filter(
+                            (submission) =>
+                                Number(submission.requirement_id) !==
+                                Number(requirementId),
+                        );
+                        const savedSubmission = serverSubmissions.find(
+                            (submission) =>
+                                Number(submission.requirement_id) ===
+                                Number(requirementId),
+                        );
+
+                        return [
+                            ...withoutCurrent,
+                            savedSubmission || uploadedSubmission,
+                        ];
+                    });
+                },
 
                 onError: (error) => {
                     setErrors(
@@ -267,20 +323,55 @@ export default function Requirements({
     */
 
     const handleSubmitApplication =
-        () => {
-            if (isLocked || !allRequiredSubmitted) {
+        async () => {
+            if (isLocked || submitting || checkingReview || uploading !== null) {
                 return;
             }
 
-            setShowReview(true);
+            setSubmissionError('');
+            setCheckingReview(true);
+
+            try {
+                const response = await fetch('/applicant/requirements/review', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const result = await response.json();
+
+                if (Array.isArray(result.submissions)) {
+                    setCurrentSubmissions(result.submissions);
+                }
+
+                if (!response.ok || !result.ready) {
+                    setSubmissionError(
+                        result.message ||
+                            'Unable to review the application. Please try again.',
+                    );
+                    return;
+                }
+
+                setShowReview(true);
+            } catch {
+                setSubmissionError(
+                    'Unable to check the uploaded documents. Please try again.',
+                );
+            } finally {
+                setCheckingReview(false);
+            }
         };
 
 
     const confirmSubmitApplication =
         () => {
-            if (isLocked || !allRequiredSubmitted || submitting) {
+            if (isLocked || submitting) {
                 return;
             }
+
+            setSubmissionError('');
 
             router.post(
                 '/applicant/requirements/submit',
@@ -288,7 +379,14 @@ export default function Requirements({
                 {
                     preserveScroll: true,
                     onStart: () => setSubmitting(true),
-                    onError: () => setSubmitting(false),
+                    onSuccess: () => setShowReview(false),
+                    onError: (error) => {
+                        setSubmissionError(
+                            error.application ||
+                                error.requirements ||
+                                'Unable to submit the application. Please refresh the page and try again.',
+                        );
+                    },
                     onFinish: () => setSubmitting(false),
                 }
             );
@@ -934,6 +1032,12 @@ export default function Requirements({
                                         const StatusIcon =
                                             verification.icon;
 
+                                        const hasDownloadableTemplate =
+                                            requirement.requirement_name
+                                                ?.trim()
+                                                .toLowerCase() ===
+                                            'student information sheet';
+
 
                                         return (
 
@@ -1027,6 +1131,43 @@ export default function Requirements({
                                                                         requirement.description
                                                                     }
                                                                 </p>
+
+                                                            )}
+
+
+                                                            {hasDownloadableTemplate && (
+
+                                                                <div className="mt-4 flex max-w-3xl flex-col gap-3 rounded-xl border border-[#ead1d1] bg-[#fcf7f7] p-4 sm:flex-row sm:items-center sm:justify-between">
+
+                                                                    <div>
+
+                                                                        <p className="text-sm font-semibold text-gray-900">
+                                                                            Use the official form
+                                                                        </p>
+
+                                                                        <p className="mt-1 text-xs leading-5 text-gray-600">
+                                                                            Download and complete the template, then upload the finished form as a PDF.
+                                                                        </p>
+
+                                                                    </div>
+
+
+                                                                    <a
+                                                                        href="/templates/student-personal-information-sheet.pdf"
+                                                                        download="USeP-Student-Personal-Information-Sheet.pdf"
+                                                                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#d9aaaa] bg-white px-3.5 py-2 text-sm font-semibold transition hover:bg-[#f9eeee]"
+                                                                        style={{
+                                                                            color: maroon,
+                                                                        }}
+                                                                    >
+
+                                                                        <Download size={16} />
+
+                                                                        Download Template
+
+                                                                    </a>
+
+                                                                </div>
 
                                                             )}
 
@@ -1507,8 +1648,7 @@ export default function Requirements({
                                                                 accept="application/pdf,.pdf"
                                                                 className="hidden"
                                                                 disabled={
-                                                                    isLocked || uploading ===
-                                                                    requirement.requirement_id
+                                                                    isLocked || uploading !== null
                                                                 }
                                                                 onChange={(
                                                                     event
@@ -1673,7 +1813,7 @@ export default function Requirements({
                                             handleSubmitApplication
                                         }
                                         disabled={
-                                            isLocked || submitting || !allRequiredSubmitted ||
+                                            isLocked || submitting || checkingReview || uploading !== null ||
                                             application.application_status !==
                                                 'Pending'
                                         }
@@ -1709,13 +1849,23 @@ export default function Requirements({
                                         }
                                     >
 
-                                        <CheckCircle
-                                            size={18}
-                                        />
+                                        {checkingReview ? (
+                                            <RefreshCw size={18} className="animate-spin" />
+                                        ) : (
+                                            <CheckCircle size={18} />
+                                        )}
 
-                                        Review and Submit
+                                        {checkingReview
+                                            ? 'Checking Documents...'
+                                            : 'Review and Submit'}
 
                                     </button>
+
+                                    {submissionError && !showReview && (
+                                        <p className="mt-2 text-sm font-medium text-red-600 md:text-right">
+                                            {submissionError}
+                                        </p>
+                                    )}
 
                                 </div>
 
@@ -1729,6 +1879,7 @@ export default function Requirements({
                                     getVerificationStatus={getVerificationStatus}
                                     formatFileSize={formatFileSize}
                                     submitting={submitting}
+                                    submissionError={submissionError}
                                     onClose={() => setShowReview(false)}
                                     onConfirm={confirmSubmitApplication}
                                 />
@@ -1847,6 +1998,7 @@ function RequirementReview({
     getVerificationStatus,
     formatFileSize,
     submitting,
+    submissionError,
     onClose,
     onConfirm,
 }) {
@@ -1942,6 +2094,15 @@ function RequirementReview({
                             By submitting, you confirm that these documents are complete, readable, and correct for your application.
                         </p>
                     </div>
+
+                    {submissionError && (
+                        <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+                            <AlertCircle size={19} className="mt-0.5 shrink-0" />
+                            <p className="text-sm leading-6">
+                                {submissionError}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">

@@ -156,16 +156,20 @@
     inset: 0 auto 0 0;
     z-index: 50;
     width: 264px;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     background: #fff;
     border-right: 1px solid #e8e5e8;
-    padding: 28px 16px 16px;
+    padding: 28px 16px max(16px, env(safe-area-inset-bottom));
 }
 .portal-brand {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
     padding: 0 6px 25px;
 }
 .portal-brand img {
@@ -198,6 +202,7 @@
     font-size: 11px;
     font-weight: 600;
     color: #69616b;
+    flex-shrink: 0;
 }
 .portal-dot {
     width: 6px;
@@ -212,10 +217,26 @@
     letter-spacing: 1.7px;
     color: #918692;
     font-weight: 700;
+    flex-shrink: 0;
 }
 .portal-sidebar nav {
     display: grid;
+    align-content: start;
+    flex: 1;
+    min-height: 0;
     gap: 5px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #d8c8cc transparent;
+}
+.portal-sidebar nav::-webkit-scrollbar {
+    width: 5px;
+}
+.portal-sidebar nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d8c8cc;
 }
 .portal-nav-link {
     display: flex;
@@ -243,8 +264,10 @@
     box-shadow: 0 3px 8px #812b3718;
 }
 .portal-sidebar-bottom {
-    margin-top: auto;
-    padding-top: 30px;
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 4px;
+    background: #fff;
 }
 .portal-motto {
     display: flex;
@@ -561,7 +584,7 @@
 @media (max-width: 1023px) {
     .portal-sidebar {
         display: none;
-        overflow-y: auto;
+        overflow: hidden;
     }
     .portal-sidebar.is-open {
         display: flex;

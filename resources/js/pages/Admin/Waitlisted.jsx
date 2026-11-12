@@ -114,7 +114,7 @@ export default function Waitlisted({ waitlisted = [] }) {
 
                         <div className="space-y-4">
                             {filtered.length ? pagination.pageRecords.map((item) => (
-                                <article key={item.application_id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+                                <article key={item.application_id} className="rounded-2xl border border-gray-300 border-l-[6px] border-l-amber-500 bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
                                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
